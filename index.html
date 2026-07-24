@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="TRENDHIGHCLOTHING -it's u against the world.">
+  <title>TRENDHIGHCLOTHING | Luxury Editorial Boutique</title>
+
+
+  <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+
+
+  <header>
+    <div class="container header-inner">
+      <nav class="header-nav">
+        <ul>
+          <li><a href="#" class="nav-link active" data-view="storefront-view">Shop</a></li>
+          <li><a href="#" class="nav-link" data-view="admin-view" id="nav-admin">Admin Dashboard</a></li>
+        </ul>
+      </nav>
+
+      <a href="#" class="logo-centered" id="nav-logo">
+        <img src="logo.png" alt="Trendhigh" class="logo-img">
+      </a>
+
+      <div class="header-actions">
+        <button class="cart-toggle" id="cart-btn" aria-label="Shopping Cart">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <path d="M16 10a4 4 0 0 1-8 0"></path>
+          </svg>
+          <span class="cart-count" id="cart-count">0</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+
+  <main>
+
+
+    <section id="storefront-view" class="view-section active">
+
+      <div class="hero">
+        <div class="hero-overlay"></div>
+        <div class="container hero-inner">
+          <h1 class="hero-title">IT'S U AGAINST THE WORLD.</h1>
+          <p class="hero-subtitle">defining your own path.</p>
+          <button class="btn btn-hero" id="hero-shop-btn">Explore Collection</button>
+        </div>
+      </div>
+
+
+      <div class="container shop-controls">
+        <div class="categories-container" id="category-filter-container">
+          <button class="category-chip active" data-category="all">All Items</button>
+          <button class="category-chip" data-category="Hoodies">Hoodies</button>
+          <button class="category-chip" data-category="Pants">Pants</button>
+          <button class="category-chip" data-category="Tees">Tees</button>
+          <button class="category-chip" data-category="Outerwear">Outerwear</button>
+          <button class="category-chip" data-category="Accessories">Accessories</button>
+        </div>
+
+        <div class="search-sort-container">
+          <div class="search-box">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"
+              stroke-width="2">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <input type="text" id="search-input" placeholder="Search collection...">
+          </div>
+
+          <select class="sort-select" id="sort-select">
+            <option value="default">Sort by</option>
+            <option value="price-asc">Price: Low to High</option>
+            <option value="price-desc">Price: High to Low</option>
+            <option value="stock-desc">In Stock</option>
+          </select>
+        </div>
+      </div>
+
+
+      <div class="container products-section">
+        <div class="products-grid" id="products-grid">
+
+        </div>
+      </div>
+    </section>
+
+
+    <section id="checkout-view" class="view-section">
+      <div class="container checkout-view">
+        <h1 class="checkout-title">Checkout</h1>
+
+        <div class="checkout-grid">
+          <!-- Delivery Information Form -->
+          <div class="checkout-form-container">
+            <form id="checkout-details-form">
+              <h2 class="checkout-section-title">Delivery Information</h2>
+
+              <div class="form-group-row">
+                <div class="form-group">
+                  <label for="first-name">First Name</label>
+                  <input type="text" id="first-name" required placeholder="e.g. Tunde">
+                </div>
+                <div class="form-group">
+                  <label for="last-name">Last Name</label>
+                  <input type="text" id="last-name" required placeholder="e.g. Adebayo">
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="shipping-email">Email Address</label>
+                <input type="email" id="shipping-email" required placeholder="name@domain.com">
+              </div>
+
+              <div class="form-group">
+                <label for="shipping-phone">Phone Number (Nigerian prefix)</label>
+                <input type="tel" id="shipping-phone" required placeholder="e.g. 08012345678" pattern="[0-9]{11}">
+              </div>
+
+              <div class="form-group">
+                <label for="shipping-address">Delivery Street Address</label>
+                <textarea id="shipping-address" rows="3" required
+                  placeholder="House number, street name, estate"></textarea>
+              </div>
+
+              <div class="form-group-row">
+                <div class="form-group">
+                  <label for="shipping-city">City</label>
+                  <input type="text" id="shipping-city" required placeholder="e.g. Ikeja">
+                </div>
+                <div class="form-group">
+                  <label for="shipping-state">State</label>
+                  <select id="shipping-state" required>
+                    <option value="" disabled selected>Select State</option>
+                    <option value="Lagos">Lagos</option>
+                    <option value="Abuja">Abuja (FCT)</option>
+                    <option value="Oyo">Oyo</option>
+                    <option value="Rivers">Rivers</option>
+                    <option value="Kano">Kano</option>
+                    <option value="Kaduna">Kaduna</option>
+                    <option value="Delta">Delta</option>
+                    <option value="Anambra">Anambra</option>
+                    <option value="Edo">Edo</option>
+                    <option value="Ogun">Ogun</option>
+                    <option value="Other">Other State</option>
+                  </select>
+                </div>
+              </div>
+            </form>
+          </div>
+
+          <!-- Order Summary Sidebar -->
+          <div class="order-summary-box">
+            <h2 class="checkout-section-title font-sans">Your Order</h2>
+
+            <div class="summary-items-list" id="checkout-summary-items">
+              <!-- Dynamically populated cart items -->
+            </div>
+
+            <div class="summary-row">
+              <span>Subtotal</span>
+              <span id="checkout-subtotal">₦0</span>
+            </div>
+            <div class="summary-row">
+              <span>Delivery (Standard)</span>
+              <span id="checkout-delivery">₦3,500</span>
+            </div>
+            <div class="summary-row total">
+              <span>Total</span>
+              <span id="checkout-total">₦0</span>
+            </div>
+
+            <button type="button" class="btn" id="proceed-payment-btn">Proceed to Payment</button>
+            <button type="button" class="btn btn-secondary" style="margin-top: 10px;" id="cancel-checkout-btn">Back to
+              Shop</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 3: Order Success View -->
+    <section id="success-view" class="view-section">
+      <div class="container order-success-view">
+        <div class="success-check-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+        </div>
+        <h1 class="success-title">Order Confirmed</h1>
+        <p class="success-message">
+          Thank you for shopping with Trendhigh. Your payment has been received and order processed.
+        </p>
+
+        <div class="receipt-card">
+          <h2 class="receipt-title">Transaction Receipt</h2>
+
+          <div class="receipt-row">
+            <span class="receipt-label">Order Reference</span>
+            <span class="receipt-val" id="receipt-ref">-</span>
+          </div>
+          <div class="receipt-row">
+            <span class="receipt-label">Date & Time</span>
+            <span class="receipt-val" id="receipt-date">-</span>
+          </div>
+          <div class="receipt-row">
+            <span class="receipt-label">Payment Method</span>
+            <span class="receipt-val" id="receipt-method">-</span>
+          </div>
+          <div class="receipt-row">
+            <span class="receipt-label">Customer Name</span>
+            <span class="receipt-val" id="receipt-customer">-</span>
+          </div>
+          <div class="receipt-row">
+            <span class="receipt-label">Delivery Address</span>
+            <span class="receipt-val" id="receipt-address" style="text-align: right; max-width: 60%;">-</span>
+          </div>
+          <div class="receipt-row"
+            style="margin-top: 14px; border-top: 1px dashed var(--border-color); padding-top: 14px; font-weight: 700;">
+            <span class="receipt-label" style="color: var(--text-primary);">Total Paid</span>
+            <span class="receipt-val" id="receipt-total">-</span>
+          </div>
+        </div>
+
+        <button class="btn" id="success-shop-btn">Continue Shopping</button>
+      </div>
+    </section>
+
+    <!-- VIEW 4: Admin Access Portal Login -->
+    <section id="admin-login-view" class="view-section">
+      <div class="container admin-login-view">
+        <div class="login-card">
+          <h1 class="login-title">Admin Gate</h1>
+          <p class="login-subtitle">Secure gateway for storefront managers</p>
+
+          <form id="admin-login-form">
+            <div class="form-group" style="margin-bottom: 20px;">
+              <label for="admin-email">Admin Email</label>
+              <input type="email" id="admin-email" placeholder="admin@trendhighclothing.com" required>
+            </div>
+
+            <div class="form-group">
+              <label for="admin-password">Access Password</label>
+              <input type="password" id="admin-password" placeholder="Enter dashboard password" required>
+              <span class="error-message" id="login-error-msg">Incorrect password. Please try again.</span>
+            </div>
+
+            <button type="submit" class="btn" style="margin-top: 15px;">Authenticate</button>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 5: Admin Workspace Dashboard -->
+    <section id="admin-view" class="view-section">
+      <div class="admin-view">
+
+        <!-- Sidebar Navigation -->
+        <aside class="admin-sidebar">
+          <div class="admin-nav-item active" data-admin-panel="admin-overview">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="7" height="9"></rect>
+              <rect x="14" y="3" width="7" height="5"></rect>
+              <rect x="14" y="12" width="7" height="9"></rect>
+              <rect x="3" y="16" width="7" height="5"></rect>
+            </svg>
+            Overview
+          </div>
+          <div class="admin-nav-item" data-admin-panel="admin-inventory">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+              <path d="M2 17l10 5 10-5"></path>
+              <path d="M2 12l10 5 10-5"></path>
+            </svg>
+            Manage Catalog
+          </div>
+          <div class="admin-nav-item" data-admin-panel="admin-orders">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="9" cy="21" r="1"></circle>
+              <circle cx="20" cy="21" r="1"></circle>
+              <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+            </svg>
+            Orders Fulfillment
+          </div>
+          <div class="admin-nav-item" id="admin-logout-btn" style="margin-top: auto;">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+              <polyline points="16 17 21 12 16 7"></polyline>
+              <line x1="21" y1="12" x2="9" y2="12"></line>
+            </svg>
+            Exit Workspace
+          </div>
+        </aside>
+
+        <!-- Dashboard Content Panels -->
+        <div class="admin-content">
+
+          <!-- PANEL A: Overview Statistics -->
+          <div id="admin-overview" class="admin-panel active">
+            <div class="admin-header-row">
+              <h1>Store Overview</h1>
+            </div>
+
+            <div class="stats-grid">
+              <div class="stat-card">
+                <span class="stat-title">Total Sales</span>
+                <span class="stat-value" id="stat-total-sales">₦0</span>
+                <span class="stat-comparison">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="3">
+                    <polyline points="18 15 12 9 6 15"></polyline>
+                  </svg>
+                  12.4% vs last week
+                </span>
+              </div>
+              <div class="stat-card">
+                <span class="stat-title">Total Orders</span>
+                <span class="stat-value" id="stat-total-orders">0</span>
+                <span class="stat-comparison">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="3">
+                    <polyline points="18 15 12 9 6 15"></polyline>
+                  </svg>
+                  8.2% vs last week
+                </span>
+              </div>
+              <div class="stat-card">
+                <span class="stat-title">Average Order Value</span>
+                <span class="stat-value" id="stat-avg-value">₦0</span>
+                <span class="stat-comparison">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="3">
+                    <polyline points="18 15 12 9 6 15"></polyline>
+                  </svg>
+                  4.1% vs last week
+                </span>
+              </div>
+            </div>
+
+            <div class="admin-dashboard-row">
+              <!-- Animated SVG chart card -->
+              <div class="chart-card">
+                <h2 class="chart-title">Revenue (Last 6 Months)</h2>
+                <div class="chart-svg-container" id="revenue-chart-container">
+                  <!-- Injected SVG graph from admin.js -->
+                </div>
+              </div>
+
+              <!-- Recent Orders summary box -->
+              <div class="chart-card">
+                <h2 class="chart-title">Recent Activity</h2>
+                <div id="recent-activity-container"
+                  style="display:flex; flex-direction:column; gap:16px; font-size:13px;">
+                  <!-- Injected activity log -->
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- PANEL B: Inventory Catalog Editor -->
+          <div id="admin-inventory" class="admin-panel">
+            <div class="admin-header-row">
+              <h1>Inventory Catalog</h1>
+              <button class="btn" id="admin-add-product-btn">Add New Product</button>
+            </div>
+
+            <div class="table-card">
+              <div class="table-responsive">
+                <table class="admin-table">
+                  <thead>
+                    <tr>
+                      <th>Image</th>
+                      <th>Product Title</th>
+                      <th>Category</th>
+                      <th>Price</th>
+                      <th>Stock Status</th>
+                      <th style="text-align: right;">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="admin-inventory-table-body">
+                    <!-- Products list dynamically loaded -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+
+          <div id="admin-orders" class="admin-panel">
+            <div class="admin-header-row">
+              <h1>Orders Fulfillment</h1>
+            </div>
+
+            <div class="table-card">
+              <div class="table-responsive">
+                <table class="admin-table">
+                  <thead>
+                    <tr>
+                      <th>Order ID</th>
+                      <th>Customer</th>
+                      <th>Billing & Shipping Address</th>
+                      <th>Method</th>
+                      <th>Total Amount</th>
+                      <th>Fulfillment</th>
+                      <th style="text-align: right;">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody id="admin-orders-table-body">
+
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+
+  <footer>
+    <div class="container footer-inner">
+      <div class="footer-brand">
+        <span class="footer-logo">Trendhigh</span>
+        <p class="footer-description">
+          An independent design house crafting high-fashion essentials. Designed in Lagos. Shipped across Nigeria.
+        </p>
+      </div>
+      <div class="footer-column">
+        <h3>Collections</h3>
+        <ul>
+          <li><a href="#" class="footer-filter-link" data-category="Hoodies">Hoodies</a></li>
+          <li><a href="#" class="footer-filter-link" data-category="Pants">Tailored Pants</a></li>
+          <li><a href="#" class="footer-filter-link" data-category="Tees">Box Tees</a></li>
+          <li><a href="#" class="footer-filter-link" data-category="Outerwear">Outerwear</a></li>
+        </ul>
+      </div>
+      <div class="footer-column">
+        <h3>Support</h3>
+        <ul>
+          <li><a href="#">Shipping Policy</a></li>
+          <li><a href="#">Returns & Exchanges</a></li>
+          <li><a href="#">Size Guidelines</a></li>
+          <li><a href="#">Care Instructions</a></li>
+        </ul>
+      </div>
+      <div class="footer-column">
+        <h3>Boutique</h3>
+        <ul>
+          <li><a href="#">Flagship Store Lagos</a></li>
+          <li><a href="#">About Trendhigh</a></li>
+          <li><a href="#">Contact Us</a></li>
+          <li><a href="#">Editorial Archive</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="container footer-bottom">
+      <p>&copy; 2026 TRENDHIGHCLOTHING. All rights reserved.</p>
+      <p style="font-size: 11px; opacity: 0.7;">Secured by local bank checkout systems.</p>
+    </div>
+  </footer>
+
+  <!-- DRAWER OVERLAYS -->
+  <div class="drawer-overlay" id="drawer-overlay"></div>
+
+
+  <div class="drawer" id="product-detail-drawer">
+    <div class="drawer-header">
+      <h2>Item Specs</h2>
+      <button class="drawer-close" id="detail-drawer-close">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+    <div class="drawer-body">
+      <div class="detail-image-box" id="detail-image-container">
+        <!-- SVG product injected -->
+      </div>
+
+      <div class="detail-meta">
+        <span class="detail-category" id="detail-category">HOODIES</span>
+        <h1 class="detail-title" id="detail-title">Heavyweight hoodie</h1>
+        <div class="detail-price" id="detail-price">₦45,000</div>
+        <p class="detail-description" id="detail-description">
+          Detailed product description goes here...
+        </p>
+
+        <div>
+          <span class="size-selector-label">Select Size</span>
+          <div class="size-chips" id="detail-sizes-container">
+            <!-- Size chips injected -->
+          </div>
+        </div>
+
+        <div class="detail-actions">
+          <button class="btn" id="add-to-cart-drawer-btn">Add to Cart</button>
+          <span class="stock-status" id="detail-stock-status">Only 12 left in stock</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Drawer 2: Cart Panel -->
+  <div class="drawer" id="cart-drawer">
+    <div class="drawer-header">
+      <h2>Shopping Bag</h2>
+      <button class="drawer-close" id="cart-drawer-close">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+    <div class="drawer-body">
+      <div class="cart-items" id="cart-items-container">
+        <!-- Cart item list injected dynamically -->
+      </div>
+    </div>
+    <div class="drawer-footer" id="cart-drawer-footer">
+      <div class="cart-summary-row">
+        <span>Subtotal</span>
+        <span id="cart-subtotal">₦0</span>
+      </div>
+      <div class="cart-summary-row total">
+        <span>Subtotal</span>
+        <span id="cart-total">₦0</span>
+      </div>
+      <button class="btn" id="cart-checkout-btn">Go to Checkout</button>
+    </div>
+  </div>
+
+  <!-- Modal 1: Admin Add/Edit Product Modal -->
+  <div class="admin-modal-overlay" id="admin-product-modal-overlay">
+    <div class="admin-modal">
+      <div class="admin-modal-header">
+        <h2 id="admin-modal-title">Add New Product</h2>
+        <button class="drawer-close" id="admin-modal-close">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+
+      <form id="admin-product-form">
+        <div class="admin-modal-body">
+          <input type="hidden" id="edit-product-id">
+
+          <div class="form-group">
+            <label for="product-title">Product Title</label>
+            <input type="text" id="product-title" required placeholder="e.g. Linen Work Blazer">
+          </div>
+
+          <div class="form-group-row">
+            <div class="form-group">
+              <label for="product-category">Category</label>
+              <select id="product-category" required>
+                <option value="" disabled selected>Select category</option>
+                <option value="Hoodies">Hoodies</option>
+                <option value="Pants">Pants</option>
+                <option value="Tees">Tees</option>
+                <option value="Outerwear">Outerwear</option>
+                <option value="Accessories">Accessories</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="product-price">Price (₦ Naira)</label>
+              <input type="number" id="product-price" required min="1000" placeholder="e.g. 35000">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="product-description">Product Description</label>
+            <textarea id="product-description" rows="3" required
+              placeholder="Describe material density, stitching, shape fit..."></textarea>
+          </div>
+
+          <div class="form-group" style="margin-bottom: 15px;">
+            <label for="product-image-file">Product Photo (Upload Image)</label>
+            <input type="file" id="product-image-file" accept="image/*" style="padding: 8px; border: 1px dashed var(--border-color); background-color: var(--bg-secondary); color: var(--text-primary); border-radius: 4px; width: 100%;">
+          </div>
+
+          <div class="form-group-row">
+            <div class="form-group">
+              <label for="product-stock">Stock Count</label>
+              <input type="number" id="product-stock" required min="0" placeholder="e.g. 15">
+            </div>
+            <div class="form-group">
+              <label for="product-color">Fallback Draw Color (HEX)</label>
+              <input type="text" id="product-color" required placeholder="e.g. #FAF8F5" value="#3A3530">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="product-sizes">Available Sizes (comma separated)</label>
+            <input type="text" id="product-sizes" required placeholder="e.g. S, M, L, XL" value="S, M, L, XL">
+          </div>
+        </div>
+
+        <div class="admin-modal-footer">
+          <button type="button" class="btn btn-secondary" id="admin-modal-cancel">Cancel</button>
+          <button type="submit" class="btn" id="admin-modal-submit">Save Product</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+
+
+  <!-- MOBILE APP BOTTOM NAVIGATION -->
+  <div class="mobile-bottom-nav">
+    <a href="#shop" class="mobile-nav-link active" data-view="storefront-view">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+        <polyline points="9 22 9 12 15 12 15 22"></polyline>
+      </svg>
+      <span>Shop</span>
+    </a>
+    <a href="#admin-login" class="mobile-nav-link" data-view="admin-view" id="mobile-nav-admin">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <rect x="3" y="3" width="7" height="9"></rect>
+        <rect x="14" y="3" width="7" height="5"></rect>
+        <rect x="14" y="12" width="7" height="9"></rect>
+        <rect x="3" y="16" width="7" height="5"></rect>
+      </svg>
+      <span>Dashboard</span>
+    </a>
+  </div>
+
+  <!-- SCRIPT INCLUSIONS -->
+  <!-- 0. Supabase SDK & Configuration -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-config.js"></script>
+  <!-- 1. Product Seed Data -->
+  <script src="products.js"></script>
+  <!-- 2. Payment Gateway & Flutterwave Integration -->
+  <script src="https://checkout.flutterwave.com/v3.js"></script>
+  <script src="flutterwave.js"></script>
+  <!-- 3. Admin Back-office Dashboard Actions -->
+  <script src="admin.js"></script>
+  <!-- 4. Client state & Routing Orchestration -->
+  <script src="app.js"></script>
+
+</body>
+
+</html>
