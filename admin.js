@@ -317,7 +317,7 @@ const AdminPortal = {
         const stockClass = isOutOfStock ? "out-of-stock" : "";
         const stockText = isOutOfStock ? "Sold Out" : `${p.stock} units`;
 
-        const imgHtml = (p.image && (p.image.startsWith("http") || p.image.startsWith("assets")))
+        const imgHtml = (p.image && (p.image.startsWith("http") || p.image.startsWith("assets") || p.image.startsWith("data:") || p.image.startsWith("/") || p.image.startsWith("blob:")))
           ? `<img src="${p.image}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 2px;" alt="${p.title}">`
           : this.getProductSVG(p.category, p.fallbackColor);
 

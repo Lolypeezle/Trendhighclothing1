@@ -501,10 +501,10 @@ const StoreApp = {
   },
 
   getProductImageOrSVG(p) {
-    if (p.image && (p.image.startsWith("http") || p.image.startsWith("assets"))) {
-      return `<img src="${p.image}" class="product-image-img" alt="${p.title}" style="width: 100%; height: 100%; object-fit: cover; transition: var(--transition-smooth);">`;
+    if (p && p.image && (p.image.startsWith("http") || p.image.startsWith("assets") || p.image.startsWith("data:") || p.image.startsWith("/") || p.image.startsWith("blob:"))) {
+      return `<img src="${p.image}" class="product-image-img" alt="${p.title || 'Product'}" style="width: 100%; height: 100%; object-fit: cover; transition: var(--transition-smooth);">`;
     }
-    return this.getProductSVG(p.category, p.fallbackColor);
+    return this.getProductSVG(p ? p.category : "Tees", p ? p.fallbackColor : "#3A3530");
   },
 
   // FILTER & SEARCH LOGIC
