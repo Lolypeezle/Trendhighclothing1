@@ -288,20 +288,23 @@ const AdminPortal = {
     let products = [];
     try {
       const sb = this.getSupabase();
+      const demoIds = ["thc-001", "thc-002", "thc-003", "thc-004", "thc-005", "thc-006", "thc-007", "thc-008"];
       if (sb) {
         const { data, error } = await sb.from('products').select('*');
         if (!error && data) {
-          products = data.map(p => ({
-            id: p.id,
-            title: p.title,
-            category: p.category,
-            price: p.price,
-            description: p.description,
-            sizes: p.sizes,
-            image: p.image,
-            fallbackColor: p.fallback_color,
-            stock: p.stock
-          }));
+          products = data
+            .filter(p => !demoIds.includes(p.id))
+            .map(p => ({
+              id: p.id,
+              title: p.title,
+              category: p.category,
+              price: p.price,
+              description: p.description,
+              sizes: p.sizes,
+              image: p.image,
+              fallbackColor: p.fallback_color,
+              stock: p.stock
+            }));
         }
       }
     } catch (err) {

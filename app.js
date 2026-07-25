@@ -158,46 +158,12 @@ const StoreApp = {
       if (!sb) throw new Error("Supabase client uninitialized");
 
       const { data, error } = await sb.from('products').select('*');
-      
       if (error) throw error;
       
-      if (!data || data.length === 0) {
-        console.log("Supabase products table is empty. Seeding initial products...");
-        // Seed INITIAL_PRODUCTS into Supabase
-        const seedPayload = INITIAL_PRODUCTS.map(p => ({
-          id: p.id,
-          title: p.title,
-          category: p.category,
-          price: p.price,
-          description: p.description,
-          sizes: p.sizes,
-          image: p.image,
-          fallback_color: p.fallbackColor,
-          stock: p.stock
-        }));
-
-        const { error: seedError } = await supabase.from('products').insert(seedPayload);
-        
-        if (seedError) {
-          console.error("Error seeding initial products to Supabase:", seedError);
-          this.products = INITIAL_PRODUCTS;
-        } else {
-          // Fetch products again after seeding
-          const { data: seededData } = await supabase.from('products').select('*');
-          this.products = (seededData || []).map(p => ({
-            id: p.id,
-            title: p.title,
-            category: p.category,
-            price: p.price,
-            description: p.description,
-            sizes: p.sizes,
-            image: p.image,
-            fallbackColor: p.fallback_color,
-            stock: p.stock
-          }));
-        }
-      } else {
-        this.products = data.map(p => ({
+      const demoIds = ["thc-001", "thc-002", "thc-003", "thc-004", "thc-005", "thc-006", "thc-007", "thc-008"];
+      this.products = (data || [])
+        .filter(p => !demoIds.includes(p.id))
+        .map(p => ({
           id: p.id,
           title: p.title,
           category: p.category,
@@ -208,12 +174,19 @@ const StoreApp = {
           fallbackColor: p.fallback_color,
           stock: p.stock
         }));
-      }
     } catch (err) {
-      console.error("Failed to load products from Supabase. Falling back to local data.", err);
-      this.products = INITIAL_PRODUCTS;
+      console.warn("Could not fetch products from Supabase:", err.message);
+      this.products = [];
     }
     
+    // Merge custom local products if any
+    const localProds = JSON.parse(localStorage.getItem("thc_custom_products")) || [];
+    localProds.forEach(lp => {
+      if (!this.products.some(p => p.id === lp.id)) {
+        this.products.push(lp);
+      }
+    });
+
     this.renderStorefront();
   },
 
