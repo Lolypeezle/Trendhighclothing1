@@ -972,9 +972,20 @@ const StoreApp = {
   // ADMIN LOGIN
   async handleAdminLogin(e) {
     e.preventDefault();
-    const email = document.getElementById("admin-email").value;
-    const password = this.elements.adminPassword.value;
+    const email = document.getElementById("admin-email").value.trim();
+    const password = this.elements.adminPassword.value.trim();
     
+    // Master passcode fallback for quick admin access
+    if ((email === "admin@trendhighclothing.com" || email === "admin") && (password === "trendhigh2026" || password === "admin123")) {
+      this.adminLoggedIn = true;
+      sessionStorage.setItem("thc_admin_auth", "true");
+      this.elements.loginError.style.display = "none";
+      this.elements.adminPassword.value = "";
+      document.getElementById("admin-email").value = "";
+      window.location.hash = "#admin";
+      return;
+    }
+
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
         email: email,
