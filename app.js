@@ -34,8 +34,8 @@ const StoreApp = {
           state: "Lagos"
         };
         const grandTotal = savedCheckout.grandTotal || paymentDetails.amount || 0;
-        const subtotal = savedCheckout.subtotal || (grandTotal - 3500);
-        const shipping = savedCheckout.shipping || 3500;
+        const subtotal = savedCheckout.subtotal || (grandTotal - 5000);
+        const shipping = savedCheckout.shipping || 5000;
 
         this.completeOrderCheckout(paymentDetails, shippingDetails, subtotal, shipping, grandTotal);
         localStorage.removeItem("thc_pending_checkout");
@@ -714,7 +714,7 @@ const StoreApp = {
         `;
       });
       
-      const shipping = subtotal > 0 ? 3500 : 0;
+      const shipping = subtotal > 0 ? 5000 : 0;
       const grandTotal = subtotal + shipping;
 
       if (this.elements.cartSubtotal) this.elements.cartSubtotal.textContent = this.formatNaira(subtotal);
@@ -756,7 +756,7 @@ const StoreApp = {
 
   getSelectedShippingFee() {
     const selectedRadio = document.querySelector('input[name="shipping-method"]:checked');
-    return selectedRadio ? Number(selectedRadio.value) : 3500;
+    return selectedRadio ? Number(selectedRadio.value) : 5000;
   },
 
   // CHECKOUT PAGE BINDINGS
@@ -869,8 +869,8 @@ const StoreApp = {
   },
 
   async completeOrderCheckout(paymentDetails, shippingDetails, subtotal, shipping, grandTotal) {
-    const calcSubtotal = subtotal || (grandTotal - (shipping || 3500));
-    const calcShipping = shipping || 3500;
+    const calcSubtotal = subtotal || (grandTotal - (shipping || 5000));
+    const calcShipping = shipping || 5000;
 
     const newOrder = {
       id: paymentDetails.reference,
