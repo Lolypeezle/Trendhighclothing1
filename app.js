@@ -625,6 +625,7 @@ const StoreApp = {
         alert(`Cannot add more. Limit of ${p.stock} units reached.`);
         return;
       }
+    } else {
       this.cart.push({
         id: p.id,
         title: p.title,
@@ -639,6 +640,7 @@ const StoreApp = {
     
     localStorage.setItem("thc_cart", JSON.stringify(this.cart));
     this.updateCartBadge();
+    this.renderCart();
   },
 
   quickAddToCart(productId) {
