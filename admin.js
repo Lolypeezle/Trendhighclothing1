@@ -388,7 +388,10 @@ const AdminPortal = {
 
   async openEditModal(productId) {
     try {
-      const { data: p, error } = await supabase
+      const sb = this.getSupabase();
+      if (!sb) return;
+
+      const { data: p, error } = await sb
         .from('products')
         .select('*')
         .eq('id', productId)
@@ -431,10 +434,11 @@ const AdminPortal = {
     const sizes = this.elements.productSizes.value.split(",").map(s => s.trim()).filter(s => s.length > 0);
 
     try {
+      const sb = this.getSupabase();
       let imageUrl = "";
-      if (id) {
+      if (id && sb) {
         // Fetch existing product to preserve old image if no new file is uploaded
-        const { data: existingProd } = await supabase.from('products').select('image').eq('id', id).single();
+        const { data: existingProd } = await sb.from('products').select('image').eq('id', id).single();
         if (existingProd) {
           imageUrl = existingProd.image;
         }
@@ -456,17 +460,21 @@ const AdminPortal = {
           const fileName = `${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
           const filePath = `products/${fileName}`;
 
-          const { data, error: uploadError } = await supabase.storage
-            .from('product-images')
-            .upload(filePath, file);
-
-          if (!uploadError && data) {
-            const { data: { publicUrl } } = supabase.storage
+          if (sb && sb.storage) {
+            const { data, error: uploadError } = await sb.storage
               .from('product-images')
-              .getPublicUrl(filePath);
-            imageUrl = publicUrl;
+              .upload(filePath, file);
+
+            if (!uploadError && data) {
+              const { data: { publicUrl } } = sb.storage
+                .from('product-images')
+                .getPublicUrl(filePath);
+              imageUrl = publicUrl;
+            } else {
+              console.warn("Supabase Storage upload failed or bucket missing. Converting image to DataURL fallback...");
+              imageUrl = await this.readFileAsDataURL(file);
+            }
           } else {
-            console.warn("Supabase Storage upload failed or bucket missing. Converting image to DataURL fallback...");
             imageUrl = await this.readFileAsDataURL(file);
           }
         } catch (storageErr) {
@@ -478,41 +486,54 @@ const AdminPortal = {
         }
       }
 
-      if (id) {
-        // EDIT MODE
-        const { error } = await supabase
-          .from('products')
-          .update({
-            title,
-            category,
-            price,
-            description,
-            stock,
-            fallback_color: color,
-            sizes,
-            image: imageUrl
-          })
-          .eq('id', id);
+      const productPayload = {
+        id: id || ("thc-" + Math.floor(100 + Math.random() * 900)),
+        title,
+        category,
+        price,
+        description,
+        sizes,
+        image: imageUrl,
+        fallback_color: color,
+        stock
+      };
 
-        if (error) throw error;
+      if (sb) {
+        if (id) {
+          // EDIT MODE
+          const { error } = await sb
+            .from('products')
+            .update({
+              title,
+              category,
+              price,
+              description,
+              stock,
+              fallback_color: color,
+              sizes,
+              image: imageUrl
+            })
+            .eq('id', id);
+
+          if (error) throw error;
+        } else {
+          // ADD MODE
+          const { error } = await sb
+            .from('products')
+            .insert([productPayload]);
+
+          if (error) throw error;
+        }
       } else {
-        // ADD MODE
-        const newId = "thc-" + Math.floor(100 + Math.random() * 900);
-        const { error } = await supabase
-          .from('products')
-          .insert([{
-            id: newId,
-            title,
-            category,
-            price,
-            description,
-            sizes,
-            image: imageUrl,
-            fallback_color: color,
-            stock
-          }]);
-
-        if (error) throw error;
+        console.warn("Supabase client not active. Saving product locally.");
+        const localProds = JSON.parse(localStorage.getItem("thc_custom_products")) || [];
+        if (id) {
+          const idx = localProds.findIndex(p => p.id === id);
+          if (idx > -1) localProds[idx] = productPayload;
+        } else {
+          localProds.push(productPayload);
+        }
+        localStorage.setItem("thc_custom_products", JSON.stringify(localProds));
       }
 
       // Reset file input
@@ -534,12 +555,15 @@ const AdminPortal = {
   async deleteProduct(productId) {
     if (confirm("Are you sure you want to delete this product?")) {
       try {
-        const { error } = await supabase
-          .from('products')
-          .delete()
-          .eq('id', productId);
+        const sb = this.getSupabase();
+        if (sb) {
+          const { error } = await sb
+            .from('products')
+            .delete()
+            .eq('id', productId);
 
-        if (error) throw error;
+          if (error) throw error;
+        }
 
         if (window.StoreApp && window.StoreApp.loadProductsFromStorage) {
           await window.StoreApp.loadProductsFromStorage();

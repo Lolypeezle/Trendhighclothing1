@@ -10,6 +10,10 @@ const StoreApp = {
   // Cache DOM references
   elements: {},
 
+  getSupabase() {
+    return window.supabaseClient || (window.supabase && typeof window.supabase.from === "function" ? window.supabase : null);
+  },
+
   async init() {
     this.cacheElements();
     await this.initDatabase();
@@ -133,12 +137,15 @@ const StoreApp = {
     
     // Check admin session in Supabase Auth
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session && session.user) {
-        this.adminLoggedIn = true;
-        sessionStorage.setItem("thc_admin_auth", "true");
-      } else {
-        this.adminLoggedIn = sessionStorage.getItem("thc_admin_auth") === "true";
+      const sb = this.getSupabase();
+      if (sb && sb.auth) {
+        const { data: { session } } = await sb.auth.getSession();
+        if (session && session.user) {
+          this.adminLoggedIn = true;
+          sessionStorage.setItem("thc_admin_auth", "true");
+        } else {
+          this.adminLoggedIn = sessionStorage.getItem("thc_admin_auth") === "true";
+        }
       }
     } catch (err) {
       console.warn("Could not check Supabase Auth session:", err);
@@ -147,7 +154,10 @@ const StoreApp = {
 
     // 2. Load products from Supabase
     try {
-      const { data, error } = await supabase.from('products').select('*');
+      const sb = this.getSupabase();
+      if (!sb) throw new Error("Supabase client uninitialized");
+
+      const { data, error } = await sb.from('products').select('*');
       
       if (error) throw error;
       
@@ -209,23 +219,35 @@ const StoreApp = {
 
   async loadProductsFromStorage() {
     try {
-      const { data, error } = await supabase.from('products').select('*');
-      if (!error && data) {
-        this.products = data.map(p => ({
-          id: p.id,
-          title: p.title,
-          category: p.category,
-          price: p.price,
-          description: p.description,
-          sizes: p.sizes,
-          image: p.image,
-          fallbackColor: p.fallback_color,
-          stock: p.stock
-        }));
+      const sb = this.getSupabase();
+      if (sb) {
+        const { data, error } = await sb.from('products').select('*');
+        if (!error && data) {
+          this.products = data.map(p => ({
+            id: p.id,
+            title: p.title,
+            category: p.category,
+            price: p.price,
+            description: p.description,
+            sizes: p.sizes,
+            image: p.image,
+            fallbackColor: p.fallback_color,
+            stock: p.stock
+          }));
+        }
       }
     } catch (err) {
       console.error("Error reloading products from Supabase:", err);
     }
+    
+    // Merge custom local products if any
+    const localProds = JSON.parse(localStorage.getItem("thc_custom_products")) || [];
+    localProds.forEach(lp => {
+      if (!this.products.some(p => p.id === lp.id)) {
+        this.products.push(lp);
+      }
+    });
+
     this.renderStorefront();
   },
 
