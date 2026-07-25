@@ -10,5 +10,7 @@ supabase-config.js
 # Dependencies
 node_modules/
 
-# Logs
+# Logs & Local Webhook Data
 *.log
+webhook_events.json
+

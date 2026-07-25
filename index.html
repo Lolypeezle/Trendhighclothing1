@@ -154,6 +154,29 @@
                   </select>
                 </div>
               </div>
+
+              <!-- Shipping Method Option Selector -->
+              <div class="form-group" style="margin-top: 16px;">
+                <label>Shipping Method</label>
+                <div class="shipping-options-grid">
+                  <label class="shipping-option-card active">
+                    <input type="radio" name="shipping-method" value="3500" checked>
+                    <div class="shipping-option-info">
+                      <span class="shipping-option-title">Standard Shipping</span>
+                      <span class="shipping-option-desc">Delivery within 2 - 4 business days</span>
+                    </div>
+                    <span class="shipping-option-price">₦3,500</span>
+                  </label>
+                  <label class="shipping-option-card">
+                    <input type="radio" name="shipping-method" value="5000">
+                    <div class="shipping-option-info">
+                      <span class="shipping-option-title">Express Priority Delivery</span>
+                      <span class="shipping-option-desc">Next day expedited dispatch</span>
+                    </div>
+                    <span class="shipping-option-price">₦5,000</span>
+                  </label>
+                </div>
+              </div>
             </form>
           </div>
 
@@ -170,11 +193,11 @@
               <span id="checkout-subtotal">₦0</span>
             </div>
             <div class="summary-row">
-              <span>Delivery (Standard)</span>
+              <span>Shipping Fee</span>
               <span id="checkout-delivery">₦3,500</span>
             </div>
             <div class="summary-row total">
-              <span>Total</span>
+              <span>Total Amount</span>
               <span id="checkout-total">₦0</span>
             </div>
 
@@ -222,8 +245,16 @@
             <span class="receipt-label">Delivery Address</span>
             <span class="receipt-val" id="receipt-address" style="text-align: right; max-width: 60%;">-</span>
           </div>
+          <div class="receipt-row" style="margin-top: 10px; border-top: 1px dashed var(--border-color); padding-top: 10px;">
+            <span class="receipt-label">Subtotal</span>
+            <span class="receipt-val" id="receipt-subtotal">₦0</span>
+          </div>
+          <div class="receipt-row">
+            <span class="receipt-label">Shipping Fee</span>
+            <span class="receipt-val" id="receipt-shipping">₦0</span>
+          </div>
           <div class="receipt-row"
-            style="margin-top: 14px; border-top: 1px dashed var(--border-color); padding-top: 14px; font-weight: 700;">
+            style="margin-top: 8px; border-top: 1px solid var(--border-color); padding-top: 12px; font-weight: 700;">
             <span class="receipt-label" style="color: var(--text-primary);">Total Paid</span>
             <span class="receipt-val" id="receipt-total">-</span>
           </div>
@@ -535,8 +566,12 @@
         <span>Subtotal</span>
         <span id="cart-subtotal">₦0</span>
       </div>
+      <div class="cart-summary-row">
+        <span>Shipping (Standard)</span>
+        <span id="cart-shipping">₦3,500</span>
+      </div>
       <div class="cart-summary-row total">
-        <span>Subtotal</span>
+        <span>Total Amount</span>
         <span id="cart-total">₦0</span>
       </div>
       <button class="btn" id="cart-checkout-btn">Go to Checkout</button>
@@ -640,6 +675,21 @@
       </svg>
       <span>Dashboard</span>
     </a>
+  </div>
+
+  <!-- Modal 2: Automatic Payment Confirmation Overlay -->
+  <div class="payment-confirmation-overlay" id="payment-confirmation-modal">
+    <div class="payment-confirmation-card">
+      <div class="payment-spinner"></div>
+      <h3 class="payment-confirmation-title" id="payment-status-title">Confirming Payment...</h3>
+      <p class="payment-confirmation-desc" id="payment-status-desc">Communicating with Flutterwave servers to verify your transaction automatically.</p>
+      <div class="payment-sec-badge">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+        </svg>
+        <span>Flutterwave 256-Bit Encrypted Verification</span>
+      </div>
+    </div>
   </div>
 
   <!-- SCRIPT INCLUSIONS -->

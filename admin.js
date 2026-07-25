@@ -123,6 +123,15 @@ const AdminPortal = {
     return "₦" + Number(val).toLocaleString("en-NG", { minimumFractionDigits: 0 });
   },
 
+  readFileAsDataURL(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = (error) => reject(error);
+      reader.readAsDataURL(file);
+    });
+  },
+
 
   async loadDashboardData() {
     let orders = [];
@@ -427,32 +436,36 @@ const AdminPortal = {
       const fileInput = this.elements.productImageFile;
       if (fileInput && fileInput.files && fileInput.files.length > 0) {
         const file = fileInput.files[0];
-        const fileExt = file.name.split('.').pop();
-        const fileName = `${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
-        const filePath = `products/${fileName}`;
-
         const submitBtn = this.elements.productSubmitBtn;
         const origText = submitBtn.textContent;
         submitBtn.textContent = "Uploading Image...";
         submitBtn.disabled = true;
 
-        const { data, error: uploadError } = await supabase.storage
-          .from('product-images')
-          .upload(filePath, file);
+        try {
+          const fileExt = file.name.split('.').pop();
+          const fileName = `${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
+          const filePath = `products/${fileName}`;
 
-        if (uploadError) {
+          const { data, error: uploadError } = await supabase.storage
+            .from('product-images')
+            .upload(filePath, file);
+
+          if (!uploadError && data) {
+            const { data: { publicUrl } } = supabase.storage
+              .from('product-images')
+              .getPublicUrl(filePath);
+            imageUrl = publicUrl;
+          } else {
+            console.warn("Supabase Storage upload failed or bucket missing. Converting image to DataURL fallback...");
+            imageUrl = await this.readFileAsDataURL(file);
+          }
+        } catch (storageErr) {
+          console.warn("Storage exception. Converting image to DataURL fallback:", storageErr);
+          imageUrl = await this.readFileAsDataURL(file);
+        } finally {
           submitBtn.textContent = origText;
           submitBtn.disabled = false;
-          throw uploadError;
         }
-
-        const { data: { publicUrl } } = supabase.storage
-          .from('product-images')
-          .getPublicUrl(filePath);
-
-        imageUrl = publicUrl;
-        submitBtn.textContent = origText;
-        submitBtn.disabled = false;
       }
 
       if (id) {

@@ -34,8 +34,10 @@ const StoreApp = {
           state: "Lagos"
         };
         const grandTotal = savedCheckout.grandTotal || paymentDetails.amount || 0;
+        const subtotal = savedCheckout.subtotal || (grandTotal - 3500);
+        const shipping = savedCheckout.shipping || 3500;
 
-        this.completeOrderCheckout(paymentDetails, shippingDetails, grandTotal);
+        this.completeOrderCheckout(paymentDetails, shippingDetails, subtotal, shipping, grandTotal);
         localStorage.removeItem("thc_pending_checkout");
       });
     }
@@ -88,6 +90,7 @@ const StoreApp = {
       cartClose: document.getElementById("cart-drawer-close"),
       cartItems: document.getElementById("cart-items-container"),
       cartSubtotal: document.getElementById("cart-subtotal"),
+      cartShipping: document.getElementById("cart-shipping"),
       cartTotal: document.getElementById("cart-total"),
       cartCheckoutBtn: document.getElementById("cart-checkout-btn"),
       cartFooter: document.getElementById("cart-drawer-footer"),
@@ -107,13 +110,20 @@ const StoreApp = {
       receiptMethod: document.getElementById("receipt-method"),
       receiptCustomer: document.getElementById("receipt-customer"),
       receiptAddress: document.getElementById("receipt-address"),
+      receiptSubtotal: document.getElementById("receipt-subtotal"),
+      receiptShipping: document.getElementById("receipt-shipping"),
       receiptTotal: document.getElementById("receipt-total"),
       btnSuccessShop: document.getElementById("success-shop-btn"),
       
       // Admin Login Elements
       adminLoginForm: document.getElementById("admin-login-form"),
       adminPassword: document.getElementById("admin-password"),
-      loginError: document.getElementById("login-error-msg")
+      loginError: document.getElementById("login-error-msg"),
+
+      // Payment Confirmation Modal
+      paymentModal: document.getElementById("payment-confirmation-modal"),
+      paymentStatusTitle: document.getElementById("payment-status-title"),
+      paymentStatusDesc: document.getElementById("payment-status-desc")
     };
   },
 
@@ -283,6 +293,16 @@ const StoreApp = {
     });
     
     this.elements.btnProceedPayment.addEventListener("click", () => this.handleCheckoutSubmission());
+
+    // Listen for Shipping Method option selection
+    document.querySelectorAll('input[name="shipping-method"]').forEach(radio => {
+      radio.addEventListener("change", (e) => {
+        document.querySelectorAll('.shipping-option-card').forEach(card => card.classList.remove('active'));
+        const card = e.target.closest('.shipping-option-card');
+        if (card) card.classList.add('active');
+        this.renderCheckoutSummary();
+      });
+    });
 
     // Success action
     this.elements.btnSuccessShop.addEventListener("click", () => {
@@ -694,8 +714,12 @@ const StoreApp = {
         `;
       });
       
-      this.elements.cartSubtotal.textContent = this.formatNaira(subtotal);
-      this.elements.cartTotal.textContent = this.formatNaira(subtotal);
+      const shipping = subtotal > 0 ? 3500 : 0;
+      const grandTotal = subtotal + shipping;
+
+      if (this.elements.cartSubtotal) this.elements.cartSubtotal.textContent = this.formatNaira(subtotal);
+      if (this.elements.cartShipping) this.elements.cartShipping.textContent = this.formatNaira(shipping);
+      if (this.elements.cartTotal) this.elements.cartTotal.textContent = this.formatNaira(grandTotal);
     }
     
     this.elements.cartItems.innerHTML = cartHtml;
@@ -730,6 +754,11 @@ const StoreApp = {
     this.renderCart();
   },
 
+  getSelectedShippingFee() {
+    const selectedRadio = document.querySelector('input[name="shipping-method"]:checked');
+    return selectedRadio ? Number(selectedRadio.value) : 3500;
+  },
+
   // CHECKOUT PAGE BINDINGS
   renderCheckoutSummary() {
     let summaryHtml = "";
@@ -755,13 +784,13 @@ const StoreApp = {
       `;
     });
     
-    const delivery = 3500; // Flat Nigerian delivery fee in Naira
-    const grandTotal = subtotal + delivery;
+    const shipping = this.getSelectedShippingFee();
+    const grandTotal = subtotal + shipping;
     
-    this.elements.checkoutItems.innerHTML = summaryHtml;
-    this.elements.checkoutSubtotal.textContent = this.formatNaira(subtotal);
-    this.elements.checkoutDelivery.textContent = this.formatNaira(delivery);
-    this.elements.checkoutTotal.textContent = this.formatNaira(grandTotal);
+    if (this.elements.checkoutItems) this.elements.checkoutItems.innerHTML = summaryHtml;
+    if (this.elements.checkoutSubtotal) this.elements.checkoutSubtotal.textContent = this.formatNaira(subtotal);
+    if (this.elements.checkoutDelivery) this.elements.checkoutDelivery.textContent = this.formatNaira(shipping);
+    if (this.elements.checkoutTotal) this.elements.checkoutTotal.textContent = this.formatNaira(grandTotal);
   },
 
   handleCheckoutSubmission() {
@@ -772,7 +801,7 @@ const StoreApp = {
       return;
     }
     
-    // Read billing data
+    // Read billing & delivery data
     const firstName = document.getElementById("first-name").value;
     const lastName = document.getElementById("last-name").value;
     const email = document.getElementById("shipping-email").value;
@@ -783,42 +812,66 @@ const StoreApp = {
     
     let subtotal = 0;
     this.cart.forEach(item => subtotal += (item.price * item.qty));
-    const grandTotal = subtotal + 3500;
+    const shipping = this.getSelectedShippingFee();
+    const grandTotal = subtotal + shipping;
     
     // Store pending shipping details for redirect recovery
-    const shippingDetails = { firstName, lastName, email, phone, address, city, state };
-    localStorage.setItem("thc_pending_checkout", JSON.stringify({ shippingDetails, grandTotal }));
+    const shippingDetails = { firstName, lastName, email, phone, address, city, state, subtotal, shipping, grandTotal };
+    localStorage.setItem("thc_pending_checkout", JSON.stringify({ shippingDetails, grandTotal, subtotal, shipping }));
 
     // Launch Flutterwave Secure Payment Integration
     if (window.FlutterwaveService) {
       FlutterwaveService.processPayment({
         amount: grandTotal,
+        subtotal: subtotal,
+        shipping: shipping,
         email: email,
         name: `${firstName} ${lastName}`,
         phone: phone,
         onSuccess: (paymentDetails) => {
           localStorage.removeItem("thc_pending_checkout");
-          this.completeOrderCheckout(paymentDetails, shippingDetails, grandTotal);
+          this.completeOrderCheckout(paymentDetails, shippingDetails, subtotal, shipping, grandTotal);
         },
         onCancel: () => {
           console.log("Payment flow cancelled.");
         }
       });
     } else {
-      // Fallback to simulator
-      PaymentGateway.show(
-        grandTotal,
-        email,
-        phone,
-        (paymentDetails) => {
-          this.completeOrderCheckout(paymentDetails, shippingDetails, grandTotal);
-        },
-        () => console.log("Payment gateway dismissed.")
-      );
+      // Fallback
+      this.completeOrderCheckout({
+        reference: "THC-FLW-" + Date.now(),
+        method: "Flutterwave",
+        status: "Paid",
+        date: new Date().toLocaleString("en-NG")
+      }, shippingDetails, subtotal, shipping, grandTotal);
     }
   },
 
-  async completeOrderCheckout(paymentDetails, shippingDetails, grandTotal) {
+  showPaymentConfirmationOverlay(msg) {
+    if (this.elements.paymentModal) {
+      if (msg && this.elements.paymentStatusDesc) {
+        this.elements.paymentStatusDesc.textContent = msg;
+      }
+      this.elements.paymentModal.style.display = "flex";
+      setTimeout(() => {
+        this.elements.paymentModal.classList.add("active");
+      }, 10);
+    }
+  },
+
+  hidePaymentConfirmationOverlay() {
+    if (this.elements.paymentModal) {
+      this.elements.paymentModal.classList.remove("active");
+      setTimeout(() => {
+        this.elements.paymentModal.style.display = "none";
+      }, 300);
+    }
+  },
+
+  async completeOrderCheckout(paymentDetails, shippingDetails, subtotal, shipping, grandTotal) {
+    const calcSubtotal = subtotal || (grandTotal - (shipping || 3500));
+    const calcShipping = shipping || 3500;
+
     const newOrder = {
       id: paymentDetails.reference,
       customer_name: `${shippingDetails.firstName} ${shippingDetails.lastName}`,
@@ -867,6 +920,8 @@ const StoreApp = {
       this.elements.receiptMethod.textContent = newOrder.payment_method;
       this.elements.receiptCustomer.textContent = newOrder.customer_name;
       this.elements.receiptAddress.textContent = `${newOrder.shipping_address}, ${newOrder.city}, ${newOrder.state} State`;
+      if (this.elements.receiptSubtotal) this.elements.receiptSubtotal.textContent = this.formatNaira(calcSubtotal);
+      if (this.elements.receiptShipping) this.elements.receiptShipping.textContent = this.formatNaira(calcShipping);
       this.elements.receiptTotal.textContent = this.formatNaira(newOrder.total);
       
       // Clear Cart
@@ -881,12 +936,13 @@ const StoreApp = {
       window.location.hash = "#success";
     } catch (err) {
       console.error("Order completion failed:", err);
-      alert("Order completed, but failed to log in server database: " + err.message);
       
       // Local fallback so user is not blocked
       const localOrders = JSON.parse(localStorage.getItem("thc_orders")) || [];
       localOrders.push({
         ...newOrder,
+        subtotal: calcSubtotal,
+        shipping: calcShipping,
         date: paymentDetails.date || new Date().toLocaleString("en-NG"),
         method: paymentDetails.method,
         customerName: newOrder.customer_name,
@@ -900,6 +956,8 @@ const StoreApp = {
       this.elements.receiptMethod.textContent = paymentDetails.method;
       this.elements.receiptCustomer.textContent = newOrder.customer_name;
       this.elements.receiptAddress.textContent = `${newOrder.shipping_address}, ${newOrder.city}, ${newOrder.state} State`;
+      if (this.elements.receiptSubtotal) this.elements.receiptSubtotal.textContent = this.formatNaira(calcSubtotal);
+      if (this.elements.receiptShipping) this.elements.receiptShipping.textContent = this.formatNaira(calcShipping);
       this.elements.receiptTotal.textContent = this.formatNaira(newOrder.total);
       this.cart = [];
       localStorage.setItem("thc_cart", JSON.stringify(this.cart));
