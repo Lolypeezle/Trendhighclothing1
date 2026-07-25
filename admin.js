@@ -3,8 +3,11 @@
 const AdminPortal = {
   activePanel: "admin-overview",
 
-
   elements: {},
+
+  getSupabase() {
+    return window.supabaseClient || window.supabase;
+  },
 
   init() {
     this.cacheElements();
@@ -63,7 +66,8 @@ const AdminPortal = {
     this.elements.btnLogout.addEventListener("click", async () => {
       if (confirm("Exit admin session?")) {
         try {
-          await supabase.auth.signOut();
+          const sb = this.getSupabase();
+          if (sb && sb.auth) await sb.auth.signOut();
         } catch (err) {
           console.warn("Error signing out from Supabase Auth:", err);
         }
@@ -136,22 +140,25 @@ const AdminPortal = {
   async loadDashboardData() {
     let orders = [];
     try {
-      const { data, error } = await supabase.from('orders').select('*');
-      if (!error && data) {
-        orders = data.map(o => ({
-          id: o.id,
-          date: o.created_at ? new Date(o.created_at).toLocaleString("en-NG") : "N/A",
-          method: o.payment_method || "N/A",
-          customerName: o.customer_name,
-          email: o.email,
-          phone: o.phone,
-          address: o.shipping_address,
-          city: o.city,
-          state: o.state,
-          items: o.items || [],
-          total: Number(o.total),
-          status: o.payment_status || "Pending"
-        }));
+      const sb = this.getSupabase();
+      if (sb) {
+        const { data, error } = await sb.from('orders').select('*');
+        if (!error && data) {
+          orders = data.map(o => ({
+            id: o.id,
+            date: o.created_at ? new Date(o.created_at).toLocaleString("en-NG") : "N/A",
+            method: o.payment_method || "N/A",
+            customerName: o.customer_name,
+            email: o.email,
+            phone: o.phone,
+            address: o.shipping_address,
+            city: o.city,
+            state: o.state,
+            items: o.items || [],
+            total: Number(o.total),
+            status: o.payment_status || "Pending"
+          }));
+        }
       }
     } catch (err) {
       console.error("Error fetching orders for dashboard:", err);
@@ -280,19 +287,22 @@ const AdminPortal = {
   async loadInventoryData() {
     let products = [];
     try {
-      const { data, error } = await supabase.from('products').select('*');
-      if (!error && data) {
-        products = data.map(p => ({
-          id: p.id,
-          title: p.title,
-          category: p.category,
-          price: p.price,
-          description: p.description,
-          sizes: p.sizes,
-          image: p.image,
-          fallbackColor: p.fallback_color,
-          stock: p.stock
-        }));
+      const sb = this.getSupabase();
+      if (sb) {
+        const { data, error } = await sb.from('products').select('*');
+        if (!error && data) {
+          products = data.map(p => ({
+            id: p.id,
+            title: p.title,
+            category: p.category,
+            price: p.price,
+            description: p.description,
+            sizes: p.sizes,
+            image: p.image,
+            fallbackColor: p.fallback_color,
+            stock: p.stock
+          }));
+        }
       }
     } catch (err) {
       console.error("Error loading products from Supabase:", err);

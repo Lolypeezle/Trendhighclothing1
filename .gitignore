@@ -2,10 +2,7 @@
 .env
 .env.*
 .env*.local
-
-# Supabase configuration with credentials
 supabase-config.js
-**/supabase-config.js
 
 # Dependencies
 node_modules/

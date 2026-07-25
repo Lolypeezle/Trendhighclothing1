@@ -975,15 +975,22 @@ const StoreApp = {
     const email = document.getElementById("admin-email").value.trim();
     const password = this.elements.adminPassword.value.trim();
 
+    const sbClient = window.supabaseClient || window.supabase;
+    if (!sbClient || !sbClient.auth || typeof sbClient.auth.signInWithPassword !== "function") {
+      this.elements.loginError.style.display = "block";
+      this.elements.loginError.textContent = "Supabase Auth client not ready. Please refresh the page.";
+      return;
+    }
+
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await sbClient.auth.signInWithPassword({
         email: email,
         password: password
       });
       
       if (error) throw error;
       
-      if (data.user) {
+      if (data && data.user) {
         this.adminLoggedIn = true;
         sessionStorage.setItem("thc_admin_auth", "true");
         this.elements.loginError.style.display = "none";
@@ -994,7 +1001,7 @@ const StoreApp = {
     } catch (err) {
       console.error("Login failed:", err);
       this.elements.loginError.style.display = "block";
-      this.elements.loginError.textContent = "Login failed: " + err.message;
+      this.elements.loginError.textContent = "Login failed: " + (err.message || "Invalid credentials");
     }
   },
 
