@@ -188,10 +188,14 @@ function getWebhookLogs() {
 }
 
 const server = http.createServer(async (req, res) => {
-  // CORS Headers for API calls
+  // CORS & Security Hardening Headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, verif-hash');
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
 
   if (req.method === 'OPTIONS') {
     res.writeHead(204);
@@ -201,11 +205,11 @@ const server = http.createServer(async (req, res) => {
   const parsedUrl = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
   const pathname = parsedUrl.pathname;
 
-  // --- SECURITY CHECK: Protect sensitive server files ---
-  const forbiddenFiles = ['.env', 'server.js', '.git', '.gitignore'];
+  // --- SECURITY CHECK: Protect sensitive server files & logs ---
+  const forbiddenFiles = ['.env', 'server.js', '.git', '.gitignore', 'webhook_events.json', 'package.json', 'package-lock.json'];
   if (forbiddenFiles.some(file => pathname.toLowerCase().includes(file))) {
     res.writeHead(403, { 'Content-Type': 'application/json' });
-    return res.end(JSON.stringify({ status: 'error', message: 'Access Denied: Protected File' }));
+    return res.end(JSON.stringify({ status: 'error', message: 'Access Denied: Protected System Resource' }));
   }
 
   // --- API ENDPOINT 1: Get Safe Public Configuration ---
@@ -382,6 +386,7 @@ const server = http.createServer(async (req, res) => {
   }
 
   // --- API ENDPOINT 5: Webhook Status & Live Event Logs ---
+  // --- API ENDPOINT 5: Webhook Status & Diagnostic Summary ---
   if (pathname === '/api/flutterwave/webhook/status' && req.method === 'GET') {
     const host = req.headers.host || 'localhost:8080';
     const protocol = req.headers['x-forwarded-proto'] || 'http';
@@ -392,9 +397,7 @@ const server = http.createServer(async (req, res) => {
       status: 'success',
       webhook_endpoint_url: `${protocol}://${host}/api/flutterwave/webhook`,
       secret_hash_configured: !!process.env.FLUTTERWAVE_SECRET_HASH,
-      secret_hash_value: process.env.FLUTTERWAVE_SECRET_HASH || 'Not set',
-      logged_events_count: logs.length,
-      recent_events: logs.slice(-10)
+      logged_events_count: logs.length
     }));
   }
 
