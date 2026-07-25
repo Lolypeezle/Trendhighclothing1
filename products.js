@@ -6,7 +6,7 @@ const INITIAL_PRODUCTS = [
     category: "Hoodies",
     price: 45000,
     description: "A boxy, heavyweight cotton hoodie in washed obsidian, featuring dropped shoulders and raw double-stitched detailing. Crafted from 450gsm organic cotton loopback.",
-    sizes: ["S", "M", "L", "XL"],
+    sizes: ["L", "XL", "XXL"],
     image: "assets/hoodie.png",
     fallbackColor: "#2A2A2B", // Obsidian
     stock: 12
@@ -17,7 +17,7 @@ const INITIAL_PRODUCTS = [
     category: "Pants",
     price: 38000,
     description: "Crafted from breathable organic linen, offering a relaxed tailored silhouette with a hidden elastic drawstring waist and double-welted pockets.",
-    sizes: ["S", "M", "L", "XL"],
+    sizes: ["L", "XL", "XXL"],
     image: "assets/pants.png",
     fallbackColor: "#DFDDD7", // Sand Linen
     stock: 15
@@ -28,7 +28,7 @@ const INITIAL_PRODUCTS = [
     category: "Tees",
     price: 22000,
     description: "A high-neck heavyweight tee crafted from premium 280gsm long-staple cotton. Featuring a wide-cut body and tailored short sleeves.",
-    sizes: ["S", "M", "L"],
+    sizes: ["L", "XL", "XXL"],
     image: "assets/tee.png",
     fallbackColor: "#EAE6DF", // Bone White
     stock: 24
@@ -39,7 +39,7 @@ const INITIAL_PRODUCTS = [
     category: "Outerwear",
     price: 95000,
     description: "Double-breasted unstructured overcoat in warm sand wool blend. Features elegant minimalist cuff straps, side slit pockets, and internal lining.",
-    sizes: ["M", "L", "XL"],
+    sizes: ["L", "XL", "XXL"],
     image: "assets/trench.png",
     fallbackColor: "#CBBFA8", // Sand Wool
     stock: 8
@@ -61,7 +61,7 @@ const INITIAL_PRODUCTS = [
     category: "Outerwear",
     price: 65000,
     description: "14oz Japanese raw denim trucker jacket. Rigid, boxy cut that conforms to your body with wear. Contrast amber stitching and steel shank buttons.",
-    sizes: ["S", "M", "L"],
+    sizes: ["L", "XL", "XXL"],
     image: "assets/denim-jacket.png",
     fallbackColor: "#2F3B4E", // Indigo Denim
     stock: 6
@@ -72,7 +72,7 @@ const INITIAL_PRODUCTS = [
     category: "Outerwear",
     price: 75000,
     description: "An unstructured, lightweight summer blazer in charcoal linen, featuring narrow notch lapels, patch pockets, and a dual-button closure.",
-    sizes: ["S", "M", "L", "XL"],
+    sizes: ["L", "XL", "XXL"],
     image: "assets/blazer.png",
     fallbackColor: "#3D3D3E", // Charcoal
     stock: 9
@@ -83,7 +83,7 @@ const INITIAL_PRODUCTS = [
     category: "Pants",
     price: 48000,
     description: "Relaxed-fit cargo trousers in concrete grey, featuring detailed double side pocket compartments, articulation knees, and ankle pull-tabs.",
-    sizes: ["S", "M", "L", "XL"],
+    sizes: ["L", "XL", "XXL"],
     image: "assets/cargo.png",
     fallbackColor: "#8D8E8F", // Concrete Grey
     stock: 14

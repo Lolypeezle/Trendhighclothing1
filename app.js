@@ -646,7 +646,7 @@ const StoreApp = {
   quickAddToCart(productId) {
     const p = this.products.find(prod => prod.id === productId);
     if (!p || p.stock === 0) return;
-    const defaultSize = p.sizes.includes("M") ? "M" : p.sizes[0];
+    const defaultSize = p.sizes.includes("L") ? "L" : p.sizes[0];
     this.addToCart(productId, defaultSize);
     this.toggleDrawer("cart", true);
   },
