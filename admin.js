@@ -740,14 +740,39 @@ const AdminPortal = {
 
     let tableHtml = "";
     if (orders.length === 0) {
-      tableHtml = `<tr><td colspan="7" style="text-align:center; padding: 40px 0; color:var(--text-secondary);">No orders have been placed yet.</td></tr>`;
+      tableHtml = `<tr><td colspan="8" style="text-align:center; padding: 40px 0; color:var(--text-secondary);">No orders have been placed yet.</td></tr>`;
     } else {
       const sortedOrders = [...orders].reverse();
 
       sortedOrders.forEach(o => {
-        let itemsSummary = "";
+        let itemsHtml = "";
         (o.items || []).forEach(it => {
-          itemsSummary += `<div style="font-size:11px; margin-bottom:2px;">• ${it.title || 'Product'} (x${it.qty || 1}) - Size: ${it.size || 'M'}</div>`;
+          let imgTag = "";
+          if (it.image && (it.image.startsWith("http") || it.image.startsWith("data:") || it.image.startsWith("assets") || it.image.startsWith("/") || it.image.startsWith("blob:"))) {
+            imgTag = `<img src="${it.image}" style="width:44px; height:44px; object-fit:cover; border-radius:4px; border:1px solid var(--border-color); flex-shrink:0;">`;
+          } else {
+            imgTag = `<div style="width:44px; height:44px; border-radius:4px; background:var(--accent-light); display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:10px; font-weight:700; color:var(--text-secondary);">THC</div>`;
+          }
+
+          const sizeText = it.size || "M";
+          const colorText = it.color || it.fallbackColor || it.category || "Standard";
+          const priceText = this.formatNaira(it.price || 0);
+
+          itemsHtml += `
+            <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px; padding-bottom:8px; border-bottom:1px dashed var(--border-color);">
+              ${imgTag}
+              <div style="font-size:12px; line-height:1.3;">
+                <div style="font-weight:600; color:var(--text-primary);">${it.title || 'Product'}</div>
+                <div style="color:var(--text-secondary); font-size:11px; margin-top:2px;">
+                  <span style="background:var(--accent-light); padding:2px 6px; border-radius:3px; font-weight:600;">Size: ${sizeText}</span>
+                  <span style="margin-left:4px; color:var(--text-secondary);">Color/Cat: <strong>${colorText}</strong></span>
+                </div>
+                <div style="font-size:11px; margin-top:2px; color:var(--text-primary); font-weight:500;">
+                  Qty: <strong>${it.qty || 1}</strong> &bull; ${priceText} ea
+                </div>
+              </div>
+            </div>
+          `;
         });
 
         let statusBadgeClass = "";
@@ -771,6 +796,11 @@ const AdminPortal = {
           <tr>
             <td><strong>${o.id}</strong><br><span style="font-size:11px; color:var(--text-secondary);">${o.date}</span></td>
             <td><strong>${o.customerName}</strong><br><span style="font-size:11px; color:var(--text-secondary);">${o.email}</span></td>
+            <td>
+              <div style="max-width:300px; min-width:220px;">
+                ${itemsHtml}
+              </div>
+            </td>
             <td>
               <div style="max-width:240px; font-size:12px; line-height:1.4;">
                 ${o.address}${o.city ? ', ' + o.city : ''}${o.state ? ', ' + o.state + ' State' : ''}<br>
