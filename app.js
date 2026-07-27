@@ -144,16 +144,22 @@ const StoreApp = {
   },
 
   loadProductsFromCache() {
-    const cachedProducts = JSON.parse(localStorage.getItem("thc_products_cache")) || [];
-    const customProducts = JSON.parse(localStorage.getItem("thc_custom_products")) || [];
-    const demoIds = ["thc-001", "thc-002", "thc-003", "thc-004", "thc-005", "thc-006", "thc-007", "thc-008"];
+    let cachedProducts = [];
+    let customProducts = [];
+    try {
+      cachedProducts = JSON.parse(localStorage.getItem("thc_products_cache")) || [];
+      customProducts = JSON.parse(localStorage.getItem("thc_custom_products")) || [];
+    } catch (err) {
+      console.warn("localStorage read note:", err);
+    }
 
+    const demoIds = ["thc-001", "thc-002", "thc-003", "thc-004", "thc-005", "thc-006", "thc-007", "thc-008"];
     const productMap = new Map();
     cachedProducts.forEach(p => {
-      if (!demoIds.includes(p.id)) productMap.set(p.id, p);
+      if (p && p.id && !demoIds.includes(p.id)) productMap.set(p.id, p);
     });
     customProducts.forEach(p => {
-      if (!demoIds.includes(p.id)) productMap.set(p.id, p);
+      if (p && p.id && !demoIds.includes(p.id)) productMap.set(p.id, p);
     });
 
     this.products = Array.from(productMap.values());
@@ -161,7 +167,11 @@ const StoreApp = {
   },
 
   saveProductsToCache(products) {
-    localStorage.setItem("thc_products_cache", JSON.stringify(products));
+    try {
+      localStorage.setItem("thc_products_cache", JSON.stringify(products));
+    } catch (err) {
+      console.warn("localStorage quota/save note:", err);
+    }
   },
 
   async initDatabase() {
@@ -258,10 +268,25 @@ const StoreApp = {
 
     if (fetchedProducts.length > 0) {
       this.saveProductsToCache(fetchedProducts);
+      
+      // Assign directly in-memory to guarantee render even if localStorage is restricted
+      const productMap = new Map();
+      fetchedProducts.forEach(p => productMap.set(p.id, p));
+      
+      // Also include any local custom products
+      try {
+        const customProds = JSON.parse(localStorage.getItem("thc_custom_products")) || [];
+        customProds.forEach(p => {
+          if (p && p.id && !demoIds.includes(p.id)) productMap.set(p.id, p);
+        });
+      } catch (e) {}
+
+      this.products = Array.from(productMap.values());
+    } else {
+      this.loadProductsFromCache();
     }
     
-    // Reload combined cache & custom products
-    this.loadProductsFromCache();
+    // Always render storefront with updated products!
     this.renderStorefront();
 
     if (window.AdminPortal && typeof window.AdminPortal.loadInventoryData === "function" && window.AdminPortal.activePanel === "admin-inventory") {
