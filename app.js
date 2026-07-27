@@ -185,12 +185,17 @@ const StoreApp = {
       this.adminLoggedIn = sessionStorage.getItem("thc_admin_auth") === "true";
     }
 
-    // 2. INSTANT 0ms Render from Local Cache
-    this.loadProductsFromCache();
-    this.renderStorefront();
+    // 2. Read from local cache
+    const cachedCount = this.loadProductsFromCache().length;
 
-    // 3. Non-blocking Background Revalidation (Stale-While-Revalidate)
-    this.loadProductsFromStorage();
+    if (cachedCount > 0) {
+      // Instant render from cache (0ms delay), revalidate in background
+      this.renderStorefront();
+      this.loadProductsFromStorage();
+    } else {
+      // Cache empty: fetch products from Supabase before rendering to prevent "No items found" flash
+      await this.loadProductsFromStorage();
+    }
   },
 
   async loadProductsFromStorage() {
