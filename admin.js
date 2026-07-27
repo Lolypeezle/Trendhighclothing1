@@ -6,7 +6,19 @@ const AdminPortal = {
   elements: {},
 
   getSupabase() {
-    return window.supabaseClient || window.supabase;
+    if (window.supabaseClient && typeof window.supabaseClient.from === "function") {
+      return window.supabaseClient;
+    }
+    if (window.supabase && typeof window.supabase.from === "function") {
+      return window.supabase;
+    }
+    if (window.supabase && typeof window.supabase.createClient === "function") {
+      var url = window.SUPABASE_URL || "https://xbgohwvxrvvrbjbzbwkx.supabase.co";
+      var key = window.SUPABASE_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhiZ29od3Z4cnZ2cmJqYnpid2t4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM5MjM3MTUsImV4cCI6MjA5OTQ5OTcxNX0.dXu3T78fRhOBx2NEN54Fp_p4Vd-5zZg3zIfbT70TrhE";
+      window.supabaseClient = window.supabase.createClient(url, key);
+      return window.supabaseClient;
+    }
+    return null;
   },
 
   init() {
@@ -285,13 +297,13 @@ const AdminPortal = {
 
   // 2. INVENTORY CATALOG PANEL
   async loadInventoryData() {
+    const demoIds = ["thc-001", "thc-002", "thc-003", "thc-004", "thc-005", "thc-006", "thc-007", "thc-008"];
     let products = [];
     try {
       const sb = this.getSupabase();
-      const demoIds = ["thc-001", "thc-002", "thc-003", "thc-004", "thc-005", "thc-006", "thc-007", "thc-008"];
       if (sb) {
         const { data, error } = await sb.from('products').select('*');
-        if (!error && data) {
+        if (!error && data && data.length > 0) {
           products = data
             .filter(p => !demoIds.includes(p.id))
             .map(p => ({
@@ -308,7 +320,37 @@ const AdminPortal = {
         }
       }
     } catch (err) {
-      console.error("Error loading products from Supabase:", err);
+      console.warn("Supabase SDK fetch in inventory panel note:", err.message);
+    }
+
+    if (products.length === 0) {
+      try {
+        const url = "https://xbgohwvxrvvrbjbzbwkx.supabase.co/rest/v1/products?select=*";
+        const key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhiZ29od3Z4cnZ2cmJqYnpid2t4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM5MjM3MTUsImV4cCI6MjA5OTQ5OTcxNX0.dXu3T78fRhOBx2NEN54Fp_p4Vd-5zZg3zIfbT70TrhE";
+        const res = await fetch(url, {
+          headers: { "apikey": key, "Authorization": "Bearer " + key }
+        });
+        if (res.ok) {
+          const restData = await res.json();
+          if (Array.isArray(restData) && restData.length > 0) {
+            products = restData
+              .filter(p => !demoIds.includes(p.id))
+              .map(p => ({
+                id: p.id,
+                title: p.title,
+                category: p.category,
+                price: p.price,
+                description: p.description,
+                sizes: p.sizes,
+                image: p.image,
+                fallbackColor: p.fallback_color,
+                stock: p.stock
+              }));
+          }
+        }
+      } catch (restErr) {
+        console.warn("Direct REST fetch in admin error:", restErr);
+      }
     }
 
     let tableHtml = "";

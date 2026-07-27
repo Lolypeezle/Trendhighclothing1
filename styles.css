@@ -2481,3 +2481,19 @@ footer {
   border-radius: 20px;
   border: 1px solid var(--border-color);
 }
+
+/* Performance & Instant Rendering Optimizations */
+.products-grid {
+  content-visibility: auto;
+  contain-intrinsic-size: 1000px;
+}
+
+.product-image-img {
+  content-visibility: auto;
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+}
+
+.product-card {
+  will-change: transform;
+}

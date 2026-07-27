@@ -11,7 +11,19 @@ const StoreApp = {
   elements: {},
 
   getSupabase() {
-    return window.supabaseClient || (window.supabase && typeof window.supabase.from === "function" ? window.supabase : null);
+    if (window.supabaseClient && typeof window.supabaseClient.from === "function") {
+      return window.supabaseClient;
+    }
+    if (window.supabase && typeof window.supabase.from === "function") {
+      return window.supabase;
+    }
+    if (window.supabase && typeof window.supabase.createClient === "function") {
+      var url = window.SUPABASE_URL || "https://xbgohwvxrvvrbjbzbwkx.supabase.co";
+      var key = window.SUPABASE_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhiZ29od3Z4cnZ2cmJqYnpid2t4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM5MjM3MTUsImV4cCI6MjA5OTQ5OTcxNX0.dXu3T78fRhOBx2NEN54Fp_p4Vd-5zZg3zIfbT70TrhE";
+      window.supabaseClient = window.supabase.createClient(url, key);
+      return window.supabaseClient;
+    }
+    return null;
   },
 
   async init() {
@@ -131,6 +143,27 @@ const StoreApp = {
     };
   },
 
+  loadProductsFromCache() {
+    const cachedProducts = JSON.parse(localStorage.getItem("thc_products_cache")) || [];
+    const customProducts = JSON.parse(localStorage.getItem("thc_custom_products")) || [];
+    const demoIds = ["thc-001", "thc-002", "thc-003", "thc-004", "thc-005", "thc-006", "thc-007", "thc-008"];
+
+    const productMap = new Map();
+    cachedProducts.forEach(p => {
+      if (!demoIds.includes(p.id)) productMap.set(p.id, p);
+    });
+    customProducts.forEach(p => {
+      if (!demoIds.includes(p.id)) productMap.set(p.id, p);
+    });
+
+    this.products = Array.from(productMap.values());
+    return this.products;
+  },
+
+  saveProductsToCache(products) {
+    localStorage.setItem("thc_products_cache", JSON.stringify(products));
+  },
+
   async initDatabase() {
     // 1. Load cart from local storage (keeps cart local for guest users)
     this.cart = JSON.parse(localStorage.getItem("thc_cart")) || [];
@@ -152,76 +185,83 @@ const StoreApp = {
       this.adminLoggedIn = sessionStorage.getItem("thc_admin_auth") === "true";
     }
 
-    // 2. Load products from Supabase
-    try {
-      const sb = this.getSupabase();
-      if (!sb) throw new Error("Supabase client uninitialized");
-
-      const { data, error } = await sb.from('products').select('*');
-      if (error) throw error;
-      
-      const demoIds = ["thc-001", "thc-002", "thc-003", "thc-004", "thc-005", "thc-006", "thc-007", "thc-008"];
-      this.products = (data || [])
-        .filter(p => !demoIds.includes(p.id))
-        .map(p => ({
-          id: p.id,
-          title: p.title,
-          category: p.category,
-          price: p.price,
-          description: p.description,
-          sizes: p.sizes,
-          image: p.image,
-          fallbackColor: p.fallback_color,
-          stock: p.stock
-        }));
-    } catch (err) {
-      console.warn("Could not fetch products from Supabase:", err.message);
-      this.products = [];
-    }
-    
-    // Merge custom local products if any
-    const localProds = JSON.parse(localStorage.getItem("thc_custom_products")) || [];
-    localProds.forEach(lp => {
-      if (!this.products.some(p => p.id === lp.id)) {
-        this.products.push(lp);
-      }
-    });
-
+    // 2. INSTANT 0ms Render from Local Cache
+    this.loadProductsFromCache();
     this.renderStorefront();
+
+    // 3. Non-blocking Background Revalidation (Stale-While-Revalidate)
+    this.loadProductsFromStorage();
   },
 
   async loadProductsFromStorage() {
+    const demoIds = ["thc-001", "thc-002", "thc-003", "thc-004", "thc-005", "thc-006", "thc-007", "thc-008"];
+    let fetchedProducts = [];
     try {
       const sb = this.getSupabase();
       if (sb) {
         const { data, error } = await sb.from('products').select('*');
-        if (!error && data) {
-          this.products = data.map(p => ({
-            id: p.id,
-            title: p.title,
-            category: p.category,
-            price: p.price,
-            description: p.description,
-            sizes: p.sizes,
-            image: p.image,
-            fallbackColor: p.fallback_color,
-            stock: p.stock
-          }));
+        if (!error && data && data.length > 0) {
+          fetchedProducts = data
+            .filter(p => !demoIds.includes(p.id))
+            .map(p => ({
+              id: p.id,
+              title: p.title,
+              category: p.category,
+              price: p.price,
+              description: p.description,
+              sizes: p.sizes,
+              image: p.image,
+              fallbackColor: p.fallback_color,
+              stock: p.stock
+            }));
         }
       }
     } catch (err) {
-      console.error("Error reloading products from Supabase:", err);
+      console.warn("Supabase SDK fetch note:", err.message);
+    }
+
+    // Direct REST API fallback if SDK fetch returned no items or failed
+    if (fetchedProducts.length === 0) {
+      try {
+        const url = "https://xbgohwvxrvvrbjbzbwkx.supabase.co/rest/v1/products?select=*";
+        const key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhiZ29od3Z4cnZ2cmJqYnpid2t4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM5MjM3MTUsImV4cCI6MjA5OTQ5OTcxNX0.dXu3T78fRhOBx2NEN54Fp_p4Vd-5zZg3zIfbT70TrhE";
+        const res = await fetch(url, {
+          headers: { "apikey": key, "Authorization": "Bearer " + key }
+        });
+        if (res.ok) {
+          const restData = await res.json();
+          if (Array.isArray(restData) && restData.length > 0) {
+            fetchedProducts = restData
+              .filter(p => !demoIds.includes(p.id))
+              .map(p => ({
+                id: p.id,
+                title: p.title,
+                category: p.category,
+                price: p.price,
+                description: p.description,
+                sizes: p.sizes,
+                image: p.image,
+                fallbackColor: p.fallback_color,
+                stock: p.stock
+              }));
+          }
+        }
+      } catch (restErr) {
+        console.warn("Direct REST fetch error:", restErr);
+      }
+    }
+
+    if (fetchedProducts.length > 0) {
+      this.saveProductsToCache(fetchedProducts);
     }
     
-    // Merge custom local products if any
-    const localProds = JSON.parse(localStorage.getItem("thc_custom_products")) || [];
-    localProds.forEach(lp => {
-      if (!this.products.some(p => p.id === lp.id)) {
-        this.products.push(lp);
-      }
-    });
-
+    // Reload combined cache & custom products
+    this.loadProductsFromCache();
     this.renderStorefront();
+
+    if (window.AdminPortal && typeof window.AdminPortal.loadInventoryData === "function" && window.AdminPortal.activePanel === "admin-inventory") {
+      window.AdminPortal.loadInventoryData();
+    }
   },
 
   bindEvents() {
@@ -475,7 +515,7 @@ const StoreApp = {
 
   getProductImageOrSVG(p) {
     if (p && p.image && (p.image.startsWith("http") || p.image.startsWith("assets") || p.image.startsWith("data:") || p.image.startsWith("/") || p.image.startsWith("blob:"))) {
-      return `<img src="${p.image}" class="product-image-img" alt="${p.title || 'Product'}" style="width: 100%; height: 100%; object-fit: cover; transition: var(--transition-smooth);">`;
+      return `<img src="${p.image}" class="product-image-img" alt="${p.title || 'Product'}" loading="lazy" decoding="async" style="width: 100%; height: 100%; object-fit: cover; transition: var(--transition-smooth);">`;
     }
     return this.getProductSVG(p ? p.category : "Tees", p ? p.fallbackColor : "#3A3530");
   },
