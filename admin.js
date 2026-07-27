@@ -234,6 +234,15 @@ const AdminPortal = {
       });
     } catch (e) {}
 
+    // Filter out demo order names (fgc, adefeni)
+    const demoKeywords = ["fgc", "adefeni"];
+    orders = orders.filter(o => {
+      const name = (o.customerName || "").toLowerCase();
+      const email = (o.email || "").toLowerCase();
+      const id = (o.id || "").toLowerCase();
+      return !demoKeywords.some(kw => name.includes(kw) || email.includes(kw) || id.includes(kw));
+    });
+
     return orders;
   },
 
@@ -775,7 +784,7 @@ const AdminPortal = {
                 ${displayStatus}
               </span>
             </td>
-            <td style="text-align: right;">
+            <td style="text-align: right; white-space: nowrap;">
               ${o.status === "Pending Payment" ?
                 `<button class="btn" style="padding: 6px 12px; font-size: 11px; background-color: #D97706; border-color: #D97706; color: white;" onclick="AdminPortal.updateOrderStatus('${o.id}', 'Paid')">Verify Payment</button>` :
                 ((o.status === "Paid" || o.status === "Pending") ?
@@ -786,6 +795,7 @@ const AdminPortal = {
                   )
                 )
               }
+              <button class="btn" style="padding: 6px 10px; font-size: 11px; background-color: #EF4444; border-color: #EF4444; color: white; margin-left: 6px;" onclick="AdminPortal.deleteOrder('${o.id}')" title="Delete Order">Delete</button>
             </td>
           </tr>
         `;
@@ -841,6 +851,37 @@ const AdminPortal = {
     } catch (e) {}
 
     await this.loadOrdersData();
+  },
+
+  async deleteOrder(orderId) {
+    if (!confirm("Are you sure you want to delete this order from fulfillment?")) return;
+
+    try {
+      const sb = this.getSupabase();
+      if (sb) {
+        await sb.from('orders').delete().eq('id', orderId);
+      }
+    } catch (err) {
+      console.warn("Supabase SDK order delete note:", err);
+    }
+
+    try {
+      const url = `https://xbgohwvxrvvrbjbzbwkx.supabase.co/rest/v1/orders?id=eq.${encodeURIComponent(orderId)}`;
+      const key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhiZ29od3Z4cnZ2cmJqYnpid2t4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM5MjM3MTUsImV4cCI6MjA5OTQ5OTcxNX0.dXu3T78fRhOBx2NEN54Fp_p4Vd-5zZg3zIfbT70TrhE";
+      await fetch(url, {
+        method: "DELETE",
+        headers: { "apikey": key, "Authorization": "Bearer " + key }
+      });
+    } catch (e) {}
+
+    try {
+      let localOrders = JSON.parse(localStorage.getItem("thc_orders")) || [];
+      localOrders = localOrders.filter(o => o.id !== orderId);
+      localStorage.setItem("thc_orders", JSON.stringify(localOrders));
+    } catch (e) {}
+
+    await this.loadOrdersData();
+    await this.loadDashboardData();
   }
 };
 
