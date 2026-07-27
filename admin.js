@@ -234,8 +234,8 @@ const AdminPortal = {
       });
     } catch (e) {}
 
-    // Filter out demo order names (fgc, adefeni)
-    const demoKeywords = ["fgc", "adefeni"];
+    // Filter out demo order names (fgc, adefeni, ade femi, adefemi, femi)
+    const demoKeywords = ["fgc", "adefeni", "ade femi", "adefemi", "femi"];
     orders = orders.filter(o => {
       const name = (o.customerName || "").toLowerCase();
       const email = (o.email || "").toLowerCase();
