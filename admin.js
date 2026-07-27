@@ -286,15 +286,26 @@ const AdminPortal = {
 
   renderSalesChart(orders) {
     const months = ["Feb", "Mar", "Apr", "May", "Jun", "Jul"];
-    let salesByMonth = [340000, 480000, 410000, 620000, 750000, 0];
+    let salesByMonth = [0, 0, 0, 0, 0, 0];
 
-    let liveJulySales = 0;
-    orders.forEach(order => {
-      liveJulySales += order.total;
-    });
-    salesByMonth[5] = liveJulySales > 0 ? liveJulySales : 120000; 
+    if (orders && orders.length > 0) {
+      orders.forEach(order => {
+        let totalVal = Number(order.total || 0);
+        if (order.date && !isNaN(new Date(order.date).getTime())) {
+          const d = new Date(order.date);
+          const monthIdx = d.getMonth();
+          if (monthIdx >= 1 && monthIdx <= 6) {
+            salesByMonth[monthIdx - 1] += totalVal;
+          } else {
+            salesByMonth[5] += totalVal;
+          }
+        } else {
+          salesByMonth[5] += totalVal;
+        }
+      });
+    }
 
-    const maxVal = Math.max(...salesByMonth) * 1.15;
+    const maxVal = Math.max(...salesByMonth, 50000) * 1.15;
 
     const paddingLeft = 45;
     const paddingRight = 15;
