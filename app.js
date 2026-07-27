@@ -938,100 +938,118 @@ const StoreApp = {
   async completeOrderCheckout(paymentDetails, shippingDetails, subtotal, shipping, grandTotal) {
     const calcSubtotal = subtotal || (grandTotal - (shipping || 5000));
     const calcShipping = shipping || 5000;
+    const refId = paymentDetails.reference || ("THC-FLW-" + Date.now());
 
     const newOrder = {
-      id: paymentDetails.reference,
-      customer_name: `${shippingDetails.firstName} ${shippingDetails.lastName}`,
-      email: shippingDetails.email,
-      phone: shippingDetails.phone,
-      shipping_address: shippingDetails.address,
-      city: shippingDetails.city,
-      state: shippingDetails.state,
+      id: refId,
+      customer_name: `${shippingDetails.firstName || ''} ${shippingDetails.lastName || ''}`.trim() || "Customer",
+      email: shippingDetails.email || paymentDetails.email || "customer@example.com",
+      phone: shippingDetails.phone || "",
+      shipping_address: shippingDetails.address || "",
+      city: shippingDetails.city || "",
+      state: shippingDetails.state || "",
       items: [...this.cart],
       total: grandTotal,
-      payment_reference: paymentDetails.reference,
-      payment_status: paymentDetails.status,
-      payment_method: paymentDetails.method
+      payment_reference: refId,
+      payment_status: paymentDetails.status || "Paid",
+      payment_method: paymentDetails.method || "Flutterwave"
     };
     
+    let savedToCloud = false;
+
+    // 1. Attempt Supabase SDK insert
     try {
-      // 1. Insert order to Supabase
-      const { error: orderError } = await supabase
-        .from('orders')
-        .insert([newOrder]);
-        
-      if (orderError) throw orderError;
-      
-      // 2. Deduct stocks from products in Supabase
-      for (const cartItem of this.cart) {
-        const prod = this.products.find(p => p.id === cartItem.id);
-        if (prod) {
-          const newStock = Math.max(0, prod.stock - cartItem.qty);
-          const { error: stockError } = await supabase
-            .from('products')
-            .update({ stock: newStock })
-            .eq('id', cartItem.id);
-            
-          if (stockError) {
-            console.error(`Failed to update stock for ${cartItem.id}:`, stockError);
+      const sb = this.getSupabase();
+      if (sb) {
+        const { error: orderError } = await sb
+          .from('orders')
+          .insert([newOrder]);
+          
+        if (!orderError) {
+          savedToCloud = true;
+
+          // Deduct stock in Supabase
+          for (const cartItem of this.cart) {
+            const prod = this.products.find(p => p.id === cartItem.id);
+            if (prod) {
+              const newStock = Math.max(0, prod.stock - cartItem.qty);
+              await sb.from('products').update({ stock: newStock }).eq('id', cartItem.id);
+            }
           }
         }
       }
-      
-      // Reload products state from Supabase
-      await this.loadProductsFromStorage();
-      
-      // Populate Receipt View
-      this.elements.receiptRef.textContent = newOrder.id;
-      this.elements.receiptDate.textContent = paymentDetails.date || new Date().toLocaleString("en-NG");
-      this.elements.receiptMethod.textContent = newOrder.payment_method;
-      this.elements.receiptCustomer.textContent = newOrder.customer_name;
-      this.elements.receiptAddress.textContent = `${newOrder.shipping_address}, ${newOrder.city}, ${newOrder.state} State`;
-      if (this.elements.receiptSubtotal) this.elements.receiptSubtotal.textContent = this.formatNaira(calcSubtotal);
-      if (this.elements.receiptShipping) this.elements.receiptShipping.textContent = this.formatNaira(calcShipping);
-      this.elements.receiptTotal.textContent = this.formatNaira(newOrder.total);
-      
-      // Clear Cart
-      this.cart = [];
-      localStorage.setItem("thc_cart", JSON.stringify(this.cart));
-      this.updateCartBadge();
-      
-      // Reset checkout form fields
-      this.elements.checkoutForm.reset();
-      
-      // Route to Success Screen
-      window.location.hash = "#success";
     } catch (err) {
-      console.error("Order completion failed:", err);
-      
-      // Local fallback so user is not blocked
-      const localOrders = JSON.parse(localStorage.getItem("thc_orders")) || [];
-      localOrders.push({
-        ...newOrder,
-        subtotal: calcSubtotal,
-        shipping: calcShipping,
-        date: paymentDetails.date || new Date().toLocaleString("en-NG"),
-        method: paymentDetails.method,
-        customerName: newOrder.customer_name,
-        address: newOrder.shipping_address
-      });
-      localStorage.setItem("thc_orders", JSON.stringify(localOrders));
-      
-      // Proceed to show receipt anyway
-      this.elements.receiptRef.textContent = newOrder.id;
-      this.elements.receiptDate.textContent = paymentDetails.date || new Date().toLocaleString("en-NG");
-      this.elements.receiptMethod.textContent = paymentDetails.method;
-      this.elements.receiptCustomer.textContent = newOrder.customer_name;
-      this.elements.receiptAddress.textContent = `${newOrder.shipping_address}, ${newOrder.city}, ${newOrder.state} State`;
-      if (this.elements.receiptSubtotal) this.elements.receiptSubtotal.textContent = this.formatNaira(calcSubtotal);
-      if (this.elements.receiptShipping) this.elements.receiptShipping.textContent = this.formatNaira(calcShipping);
-      this.elements.receiptTotal.textContent = this.formatNaira(newOrder.total);
-      this.cart = [];
-      localStorage.setItem("thc_cart", JSON.stringify(this.cart));
-      this.updateCartBadge();
-      this.elements.checkoutForm.reset();
-      window.location.hash = "#success";
+      console.warn("Supabase SDK order insert note:", err.message || err);
     }
+
+    // 2. Direct REST API insert fallback if SDK insert did not complete
+    if (!savedToCloud) {
+      try {
+        const url = "https://xbgohwvxrvvrbjbzbwkx.supabase.co/rest/v1/orders";
+        const key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhiZ29od3Z4cnZ2cmJqYnpid2t4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM5MjM3MTUsImV4cCI6MjA5OTQ5OTcxNX0.dXu3T78fRhOBx2NEN54Fp_p4Vd-5zZg3zIfbT70TrhE";
+        const res = await fetch(url, {
+          method: "POST",
+          headers: {
+            "apikey": key,
+            "Authorization": "Bearer " + key,
+            "Content-Type": "application/json",
+            "Prefer": "return=minimal"
+          },
+          body: JSON.stringify([newOrder])
+        });
+        if (res.ok) {
+          savedToCloud = true;
+        }
+      } catch (restErr) {
+        console.warn("Direct REST order insert error:", restErr);
+      }
+    }
+
+    // 3. Always save to Local Storage cache so order is never lost
+    try {
+      const localOrders = JSON.parse(localStorage.getItem("thc_orders")) || [];
+      const idx = localOrders.findIndex(o => o.id === newOrder.id);
+      if (idx > -1) localOrders[idx] = newOrder;
+      else localOrders.unshift(newOrder);
+      localStorage.setItem("thc_orders", JSON.stringify(localOrders));
+    } catch (e) {
+      console.warn("localStorage order save note:", e);
+    }
+
+    // 4. Broadcast order creation to Admin Portal across tabs & windows
+    if ("BroadcastChannel" in window) {
+      try {
+        const orderChannel = new BroadcastChannel("thc_orders_channel");
+        orderChannel.postMessage({ type: "ORDER_CREATED", order: newOrder });
+      } catch (e) {}
+    }
+    window.dispatchEvent(new CustomEvent("thc-order-created", { detail: { order: newOrder } }));
+
+    // Update inventory state
+    this.loadProductsFromStorage();
+    
+    // Populate Receipt View
+    if (this.elements.receiptRef) this.elements.receiptRef.textContent = newOrder.id;
+    if (this.elements.receiptDate) this.elements.receiptDate.textContent = paymentDetails.date || new Date().toLocaleString("en-NG");
+    if (this.elements.receiptMethod) this.elements.receiptMethod.textContent = newOrder.payment_method;
+    if (this.elements.receiptCustomer) this.elements.receiptCustomer.textContent = newOrder.customer_name;
+    if (this.elements.receiptAddress) this.elements.receiptAddress.textContent = `${newOrder.shipping_address}, ${newOrder.city}, ${newOrder.state} State`;
+    if (this.elements.receiptSubtotal) this.elements.receiptSubtotal.textContent = this.formatNaira(calcSubtotal);
+    if (this.elements.receiptShipping) this.elements.receiptShipping.textContent = this.formatNaira(calcShipping);
+    if (this.elements.receiptTotal) this.elements.receiptTotal.textContent = this.formatNaira(newOrder.total);
+    
+    // Clear Cart
+    this.cart = [];
+    try {
+      localStorage.setItem("thc_cart", JSON.stringify(this.cart));
+    } catch (e) {}
+    this.updateCartBadge();
+    
+    // Reset checkout form fields
+    if (this.elements.checkoutForm) this.elements.checkoutForm.reset();
+    
+    // Route to Success Screen
+    window.location.hash = "#success";
   },
 
   // ADMIN LOGIN (Authenticated via Supabase Auth Database)

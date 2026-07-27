@@ -24,6 +24,7 @@ const AdminPortal = {
   init() {
     this.cacheElements();
     this.bindEvents();
+    this.setupOrderRealtimeSync();
   },
 
   cacheElements() {
@@ -149,32 +150,123 @@ const AdminPortal = {
   },
 
 
-  async loadDashboardData() {
+  async fetchOrders() {
     let orders = [];
-    try {
-      const sb = this.getSupabase();
-      if (sb) {
+    const sb = this.getSupabase();
+
+    // 1. Attempt Supabase SDK fetch
+    if (sb) {
+      try {
         const { data, error } = await sb.from('orders').select('*');
-        if (!error && data) {
+        if (!error && Array.isArray(data) && data.length > 0) {
           orders = data.map(o => ({
             id: o.id,
-            date: o.created_at ? new Date(o.created_at).toLocaleString("en-NG") : "N/A",
-            method: o.payment_method || "N/A",
-            customerName: o.customer_name,
-            email: o.email,
-            phone: o.phone,
-            address: o.shipping_address,
-            city: o.city,
-            state: o.state,
+            date: o.created_at ? new Date(o.created_at).toLocaleString("en-NG") : (o.date || "N/A"),
+            method: o.payment_method || o.method || "N/A",
+            customerName: o.customer_name || o.customerName || "Customer",
+            email: o.email || "",
+            phone: o.phone || "",
+            address: o.shipping_address || o.address || "",
+            city: o.city || "",
+            state: o.state || "",
             items: o.items || [],
-            total: Number(o.total),
-            status: o.payment_status || "Pending"
+            total: Number(o.total || 0),
+            status: o.payment_status || o.status || "Paid"
           }));
         }
+      } catch (err) {
+        console.warn("SDK order fetch warning:", err);
       }
-    } catch (err) {
-      console.error("Error fetching orders for dashboard:", err);
     }
+
+    // 2. Direct REST API Fallback if SDK returns no orders
+    if (orders.length === 0) {
+      try {
+        const url = "https://xbgohwvxrvvrbjbzbwkx.supabase.co/rest/v1/orders?select=*";
+        const key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhiZ29od3Z4cnZ2cmJqYnpid2t4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM5MjM3MTUsImV4cCI6MjA5OTQ5OTcxNX0.dXu3T78fRhOBx2NEN54Fp_p4Vd-5zZg3zIfbT70TrhE";
+        const res = await fetch(url, {
+          headers: { "apikey": key, "Authorization": "Bearer " + key }
+        });
+        if (res.ok) {
+          const restData = await res.json();
+          if (Array.isArray(restData) && restData.length > 0) {
+            orders = restData.map(o => ({
+              id: o.id,
+              date: o.created_at ? new Date(o.created_at).toLocaleString("en-NG") : (o.date || "N/A"),
+              method: o.payment_method || o.method || "N/A",
+              customerName: o.customer_name || o.customerName || "Customer",
+              email: o.email || "",
+              phone: o.phone || "",
+              address: o.shipping_address || o.address || "",
+              city: o.city || "",
+              state: o.state || "",
+              items: o.items || [],
+              total: Number(o.total || 0),
+              status: o.payment_status || o.status || "Paid"
+            }));
+          }
+        }
+      } catch (restErr) {
+        console.warn("Direct REST order fetch error:", restErr);
+      }
+    }
+
+    // 3. Merge local fallback orders from localStorage
+    try {
+      const localOrders = JSON.parse(localStorage.getItem("thc_orders")) || [];
+      localOrders.forEach(lo => {
+        if (!orders.some(o => o.id === lo.id)) {
+          orders.push({
+            id: lo.id,
+            date: lo.date || new Date().toLocaleString("en-NG"),
+            method: lo.payment_method || lo.method || "N/A",
+            customerName: lo.customer_name || lo.customerName || "Customer",
+            email: lo.email || "",
+            phone: lo.phone || "",
+            address: lo.shipping_address || lo.address || "",
+            city: lo.city || "",
+            state: lo.state || "",
+            items: lo.items || [],
+            total: Number(lo.total || 0),
+            status: lo.payment_status || lo.status || "Paid"
+          });
+        }
+      });
+    } catch (e) {}
+
+    return orders;
+  },
+
+  setupOrderRealtimeSync() {
+    if ("BroadcastChannel" in window) {
+      try {
+        const channel = new BroadcastChannel("thc_orders_channel");
+        channel.onmessage = (event) => {
+          if (event.data && (event.data.type === "ORDER_CREATED" || event.data.type === "ORDER_UPDATED")) {
+            this.refreshPanelData(this.activePanel);
+          }
+        };
+      } catch (e) {}
+    }
+
+    window.addEventListener("thc-order-created", () => {
+      this.refreshPanelData(this.activePanel);
+    });
+
+    try {
+      const sb = this.getSupabase();
+      if (sb && typeof sb.channel === "function") {
+        sb.channel("orders-db-changes")
+          .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, () => {
+            this.refreshPanelData(this.activePanel);
+          })
+          .subscribe();
+      }
+    } catch (e) {}
+  },
+
+  async loadDashboardData() {
+    const orders = await this.fetchOrders();
 
     let totalSales = 0;
     orders.forEach(order => {
@@ -624,28 +716,7 @@ const AdminPortal = {
 
   // 3. ORDERS FULFILLMENT PANEL
   async loadOrdersData() {
-    let orders = [];
-    try {
-      const { data, error } = await supabase.from('orders').select('*');
-      if (!error && data) {
-        orders = data.map(o => ({
-          id: o.id,
-          date: o.created_at ? new Date(o.created_at).toLocaleString("en-NG") : "N/A",
-          method: o.payment_method || "N/A",
-          customerName: o.customer_name,
-          email: o.email,
-          phone: o.phone,
-          address: o.shipping_address,
-          city: o.city,
-          state: o.state,
-          items: o.items || [],
-          total: Number(o.total),
-          status: o.payment_status || "Pending"
-        }));
-      }
-    } catch (err) {
-      console.error("Error loading orders from Supabase:", err);
-    }
+    const orders = await this.fetchOrders();
 
     let tableHtml = "";
     if (orders.length === 0) {
@@ -655,8 +726,8 @@ const AdminPortal = {
 
       sortedOrders.forEach(o => {
         let itemsSummary = "";
-        o.items.forEach(it => {
-          itemsSummary += `<div style="font-size:11px; margin-bottom:2px;">• ${it.title} (x${it.qty}) - Size: ${it.size}</div>`;
+        (o.items || []).forEach(it => {
+          itemsSummary += `<div style="font-size:11px; margin-bottom:2px;">• ${it.title || 'Product'} (x${it.qty || 1}) - Size: ${it.size || 'M'}</div>`;
         });
 
         let statusBadgeClass = "";
@@ -682,12 +753,12 @@ const AdminPortal = {
             <td><strong>${o.customerName}</strong><br><span style="font-size:11px; color:var(--text-secondary);">${o.email}</span></td>
             <td>
               <div style="max-width:240px; font-size:12px; line-height:1.4;">
-                ${o.address}, ${o.city}, ${o.state} State<br>
+                ${o.address}${o.city ? ', ' + o.city : ''}${o.state ? ', ' + o.state + ' State' : ''}<br>
                 <span style="font-weight:600; color:var(--text-secondary);">Tel: ${o.phone}</span>
               </div>
             </td>
             <td style="font-size:11px; font-weight:500;">${o.method}</td>
-            <td><strong>${this.formatNaira(o.total)}</strong><br><span style="font-size:10px; color:var(--text-secondary);">${o.items.length} items</span></td>
+            <td><strong>${this.formatNaira(o.total)}</strong><br><span style="font-size:10px; color:var(--text-secondary);">${(o.items || []).length} items</span></td>
             <td>
               <span class="action-badge ${statusBadgeClass}">
                 ${displayStatus}
@@ -714,18 +785,51 @@ const AdminPortal = {
   },
 
   async updateOrderStatus(orderId, newStatus) {
+    let updatedInCloud = false;
     try {
-      const { error } = await supabase
-        .from('orders')
-        .update({ payment_status: newStatus })
-        .eq('id', orderId);
+      const sb = this.getSupabase();
+      if (sb) {
+        const { error } = await sb
+          .from('orders')
+          .update({ payment_status: newStatus })
+          .eq('id', orderId);
 
-      if (error) throw error;
-      await this.loadOrdersData();
+        if (!error) updatedInCloud = true;
+      }
     } catch (err) {
-      console.error("Error updating order status:", err);
-      alert("Error updating status: " + err.message);
+      console.warn("SDK order status update warning:", err);
     }
+
+    if (!updatedInCloud) {
+      try {
+        const url = `https://xbgohwvxrvvrbjbzbwkx.supabase.co/rest/v1/orders?id=eq.${encodeURIComponent(orderId)}`;
+        const key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhiZ29od3Z4cnZ2cmJqYnpid2t4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM5MjM3MTUsImV4cCI6MjA5OTQ5OTcxNX0.dXu3T78fRhOBx2NEN54Fp_p4Vd-5zZg3zIfbT70TrhE";
+        await fetch(url, {
+          method: "PATCH",
+          headers: {
+            "apikey": key,
+            "Authorization": "Bearer " + key,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ payment_status: newStatus })
+        });
+      } catch (restErr) {
+        console.warn("Direct REST order status update error:", restErr);
+      }
+    }
+
+    // Always update local storage state as well
+    try {
+      const localOrders = JSON.parse(localStorage.getItem("thc_orders")) || [];
+      const order = localOrders.find(o => o.id === orderId);
+      if (order) {
+        order.payment_status = newStatus;
+        order.status = newStatus;
+        localStorage.setItem("thc_orders", JSON.stringify(localOrders));
+      }
+    } catch (e) {}
+
+    await this.loadOrdersData();
   }
 };
 
