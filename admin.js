@@ -732,7 +732,9 @@ const AdminPortal = {
 // Expose globally so inline onclick events can trigger it
 window.AdminPortal = AdminPortal;
 
-// Initialize
-document.addEventListener("DOMContentLoaded", () => {
+// Resilient Initialization for Netlify & Async Scripts
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", () => AdminPortal.init());
+} else {
   AdminPortal.init();
-});
+}

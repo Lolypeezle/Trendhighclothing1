@@ -1087,7 +1087,9 @@ const StoreApp = {
 // Expose globally
 window.StoreApp = StoreApp;
 
-// Initialize
-document.addEventListener("DOMContentLoaded", () => {
+// Resilient Initialization for Netlify & Async Scripts
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", () => StoreApp.init());
+} else {
   StoreApp.init();
-});
+}
