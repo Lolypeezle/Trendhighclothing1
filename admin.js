@@ -87,6 +87,9 @@ const AdminPortal = {
         sessionStorage.removeItem("thc_admin_auth");
         if (window.StoreApp) {
           window.StoreApp.adminLoggedIn = false;
+          if (typeof window.StoreApp.updateAdminNavVisibility === "function") {
+            window.StoreApp.updateAdminNavVisibility();
+          }
         }
         window.location.hash = "#shop";
       }

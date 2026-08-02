@@ -407,10 +407,27 @@ const StoreApp = {
     });
   },
 
+  updateAdminNavVisibility() {
+    const isAuth = this.adminLoggedIn || sessionStorage.getItem("thc_admin_auth") === "true";
+    if (isAuth) {
+      this.adminLoggedIn = true;
+    }
+    if (this.elements.navAdmin) {
+      this.elements.navAdmin.style.display = isAuth ? "inline-block" : "none";
+    }
+    const mobAdmin = document.getElementById("mobile-nav-admin");
+    if (mobAdmin) {
+      mobAdmin.style.display = isAuth ? "flex" : "none";
+    }
+  },
+
   setupRouting() {
     const hash = window.location.hash || "#shop";
     const header = document.querySelector("header");
     
+    // Check and update admin nav link visibility
+    this.updateAdminNavVisibility();
+
     // Toggle on-hero class depending on view
     if (hash === "#shop" || hash === "") {
       header.classList.add("on-hero");
@@ -439,13 +456,13 @@ const StoreApp = {
       this.renderCheckoutSummary();
     } else if (hash === "#success") {
       this.elements.views.success.classList.add("active");
-    } else if (hash === "#admin-login") {
+    } else if (hash === "#admin-login" || hash === "#secret-admin" || hash === "#admin-gate") {
       if (this.adminLoggedIn) {
         window.location.hash = "#admin";
         return;
       }
       this.elements.views.adminLogin.classList.add("active");
-      this.elements.navAdmin.classList.add("active");
+      if (this.elements.navAdmin) this.elements.navAdmin.classList.add("active");
       const mobAdmin = document.getElementById("mobile-nav-admin");
       if (mobAdmin) mobAdmin.classList.add("active");
     } else if (hash === "#admin") {
@@ -454,7 +471,7 @@ const StoreApp = {
         return;
       }
       this.elements.views.adminDashboard.classList.add("active");
-      this.elements.navAdmin.classList.add("active");
+      if (this.elements.navAdmin) this.elements.navAdmin.classList.add("active");
       const mobAdmin = document.getElementById("mobile-nav-admin");
       if (mobAdmin) mobAdmin.classList.add("active");
       
@@ -1076,6 +1093,7 @@ const StoreApp = {
       if (data && data.user) {
         this.adminLoggedIn = true;
         sessionStorage.setItem("thc_admin_auth", "true");
+        this.updateAdminNavVisibility();
         this.elements.loginError.style.display = "none";
         this.elements.adminPassword.value = "";
         document.getElementById("admin-email").value = "";
