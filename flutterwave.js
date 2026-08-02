@@ -1,4 +1,3 @@
-// TRENDHIGHCLOTHING - Client-side Flutterwave Secure Integration Service
 // Supports local node server backend, Netlify static hosting, and direct client checkout seamlessly.
 
 (function () {
@@ -84,7 +83,6 @@
       const shippingVal = shipping || 0;
       const paymentDescription = `Order Payment (Subtotal: ₦${Number(subtotalVal).toLocaleString()} + Shipping: ₦${Number(shippingVal).toLocaleString()})`;
 
-      // 1. Inline checkout via Flutterwave JS SDK (Works on Netlify, Mobile, & Local)
       if (typeof window.FlutterwaveCheckout === "function" && pubKey) {
         try {
           window.FlutterwaveCheckout({
@@ -143,7 +141,6 @@
         }
       }
 
-      // 2. Server-side payment initialization attempt
       if (!isFileProtocol) {
         try {
           const response = await fetch("/api/flutterwave/initialize", {
@@ -177,7 +174,6 @@
         }
       }
 
-      // 3. Resilient Fallback Checkout
       if (onSuccess) {
         onSuccess({
           reference: tx_ref,
@@ -261,3 +257,4 @@
 
   window.FlutterwaveService = FlutterwaveService;
 })();
+

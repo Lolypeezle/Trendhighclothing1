@@ -7,12 +7,10 @@
   <meta name="description" content="TRENDHIGHCLOTHING -it's u against the world.">
   <title>TRENDHIGHCLOTHING | Luxury Editorial Boutique</title>
 
-
   <link rel="stylesheet" href="styles.css">
 </head>
 
 <body>
-
 
   <header>
     <div class="container header-inner">
@@ -39,9 +37,7 @@
     </div>
   </header>
 
-
   <main>
-
 
     <section id="storefront-view" class="view-section active">
 
@@ -53,7 +49,6 @@
           <button class="btn btn-hero" id="hero-shop-btn">Explore Collection</button>
         </div>
       </div>
-
 
       <div class="container shop-controls">
         <div class="categories-container" id="category-filter-container">
@@ -84,14 +79,12 @@
         </div>
       </div>
 
-
       <div class="container products-section">
         <div class="products-grid" id="products-grid">
 
         </div>
       </div>
     </section>
-
 
     <section id="checkout-view" class="view-section">
       <div class="container checkout-view">
@@ -208,7 +201,6 @@
       </div>
     </section>
 
-    <!-- VIEW 3: Order Success View -->
     <section id="success-view" class="view-section">
       <div class="container order-success-view">
         <div class="success-check-icon">
@@ -263,7 +255,6 @@
       </div>
     </section>
 
-    <!-- VIEW 4: Admin Access Portal Login -->
     <section id="admin-login-view" class="view-section">
       <div class="container admin-login-view">
         <div class="login-card">
@@ -288,7 +279,6 @@
       </div>
     </section>
 
-    <!-- VIEW 5: Admin Workspace Dashboard -->
     <section id="admin-view" class="view-section">
       <div class="admin-view">
 
@@ -401,7 +391,6 @@
             </div>
           </div>
 
-
           <div id="admin-orders" class="admin-panel">
             <div class="admin-header-row">
               <h1>Orders Fulfillment</h1>
@@ -435,7 +424,6 @@
     </section>
 
   </main>
-
 
   <footer>
     <div class="container footer-inner">
@@ -482,7 +470,6 @@
 
   <!-- DRAWER OVERLAYS -->
   <div class="drawer-overlay" id="drawer-overlay"></div>
-
 
   <div class="drawer" id="product-detail-drawer">
     <div class="drawer-header">
@@ -557,7 +544,6 @@
     </div>
   </div>
 
-  <!-- Modal 1: Admin Add/Edit Product Modal -->
   <div class="admin-modal-overlay" id="admin-product-modal-overlay">
     <div class="admin-modal">
       <div class="admin-modal-header">
@@ -634,8 +620,6 @@
     </div>
   </div>
 
-
-
   <!-- MOBILE APP BOTTOM NAVIGATION -->
   <div class="mobile-bottom-nav">
     <a href="#shop" class="mobile-nav-link active" data-view="storefront-view">
@@ -647,7 +631,6 @@
     </a>
   </div>
 
-  <!-- Modal 2: Automatic Payment Confirmation Overlay -->
   <div class="payment-confirmation-overlay" id="payment-confirmation-modal">
     <div class="payment-confirmation-card">
       <div class="payment-spinner"></div>
@@ -663,7 +646,6 @@
   </div>
 
   <!-- SCRIPT INCLUSIONS -->
-  <!-- 0. Supabase SDK & Configuration -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
     // Automatic Supabase Client Initializer for Netlify & Production
@@ -676,14 +658,10 @@
     })();
   </script>
   <script src="supabase-config.js"></script>
-  <!-- 1. Product Seed Data -->
   <script src="products.js"></script>
-  <!-- 2. Payment Gateway & Flutterwave Integration -->
   <script src="https://checkout.flutterwave.com/v3.js"></script>
   <script src="flutterwave.js"></script>
-  <!-- 3. Admin Back-office Dashboard Actions -->
   <script src="admin.js"></script>
-  <!-- 4. Client state & Routing Orchestration -->
   <script src="app.js"></script>
 
 </body>

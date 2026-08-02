@@ -1,10 +1,8 @@
-// TRENDHIGHCLOTHING - Native Node.js Server with Secure Flutterwave Payment Endpoints
 const http = require('http');
 const https = require('https');
 const fs = require('fs');
 const path = require('path');
 
-// 1. Load environment variables from .env file securely on server startup
 function loadEnv() {
   const envPath = path.join(__dirname, '.env');
   if (fs.existsSync(envPath)) {
@@ -36,7 +34,6 @@ const MIME_TYPES = {
   '.json': 'application/json'
 };
 
-// Helper to parse JSON request bodies
 function parseRequestBody(req) {
   return new Promise((resolve, reject) => {
     let body = '';
@@ -58,7 +55,6 @@ function parseRequestBody(req) {
   });
 }
 
-// Helper to call Flutterwave REST API securely from server using FLUTTERWAVE_SECRET_KEY
 function callFlutterwaveApi(endpointPath, method = 'GET', payload = null) {
   return new Promise((resolve, reject) => {
     const secretKey = process.env.FLUTTERWAVE_SECRET_KEY || '';
@@ -109,7 +105,6 @@ function callFlutterwaveApi(endpointPath, method = 'GET', payload = null) {
   });
 }
 
-// Helper to call Supabase REST API for database synchronization
 function callSupabaseRest(endpoint, method = 'GET', payload = null) {
   return new Promise((resolve, reject) => {
     const supabaseUrl = process.env.SUPABASE_URL || 'https://xbgohwvxrvvrbjbzbwkx.supabase.co';
@@ -157,7 +152,6 @@ function callSupabaseRest(endpoint, method = 'GET', payload = null) {
   });
 }
 
-// Local Webhook Log Persistence
 const WEBHOOK_LOG_FILE = path.join(__dirname, 'webhook_events.json');
 
 function saveWebhookLog(logItem) {
@@ -188,7 +182,6 @@ function getWebhookLogs() {
 }
 
 const server = http.createServer(async (req, res) => {
-  // CORS & Security Hardening Headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, verif-hash');
@@ -205,14 +198,12 @@ const server = http.createServer(async (req, res) => {
   const parsedUrl = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
   const pathname = parsedUrl.pathname;
 
-  // --- SECURITY CHECK: Protect sensitive server files & logs ---
   const forbiddenFiles = ['.env', 'server.js', '.git', '.gitignore', 'webhook_events.json', 'package.json', 'package-lock.json'];
   if (forbiddenFiles.some(file => pathname.toLowerCase().includes(file))) {
     res.writeHead(403, { 'Content-Type': 'application/json' });
     return res.end(JSON.stringify({ status: 'error', message: 'Access Denied: Protected System Resource' }));
   }
 
-  // --- API ENDPOINT 1: Get Safe Public Configuration ---
   if (pathname === '/api/config/public-key' && req.method === 'GET') {
     res.writeHead(200, { 'Content-Type': 'application/json' });
     return res.end(JSON.stringify({
@@ -220,7 +211,6 @@ const server = http.createServer(async (req, res) => {
     }));
   }
 
-  // --- API ENDPOINT 2: Initialize Flutterwave Payment (Server-Side) ---
   if (pathname === '/api/flutterwave/initialize' && req.method === 'POST') {
     try {
       const body = await parseRequestBody(req);
@@ -268,7 +258,6 @@ const server = http.createServer(async (req, res) => {
     }
   }
 
-  // --- API ENDPOINT 3: Verify Flutterwave Transaction (Server-Side Verification) ---
   if (pathname === '/api/flutterwave/verify' && req.method === 'GET') {
     try {
       const transaction_id = parsedUrl.searchParams.get('transaction_id');
@@ -296,13 +285,11 @@ const server = http.createServer(async (req, res) => {
     }
   }
 
-  // --- API ENDPOINT 4: Flutterwave Webhook Listener ---
   if (pathname === '/api/flutterwave/webhook' && req.method === 'POST') {
     try {
       const secretHash = process.env.FLUTTERWAVE_SECRET_HASH;
       const signature = req.headers['verif-hash'];
 
-      // 1. Signature Verification Security Check
       if (secretHash && signature !== secretHash) {
         console.warn('[Webhook Warning]: Invalid signature header verif-hash.');
         res.writeHead(401, { 'Content-Type': 'application/json' });
@@ -317,7 +304,6 @@ const server = http.createServer(async (req, res) => {
 
       console.log(`[Flutterwave Webhook Received]: Event '${event}' | ID: ${transactionId} | Ref: ${txRef}`);
 
-      // 2. Server-Side Double Verification with Flutterwave API
       let verified = false;
       let verificationData = null;
 
@@ -333,7 +319,6 @@ const server = http.createServer(async (req, res) => {
         }
       }
 
-      // 3. Log Webhook Event
       const logEntry = {
         timestamp: new Date().toISOString(),
         event: event,
@@ -346,7 +331,6 @@ const server = http.createServer(async (req, res) => {
       };
       saveWebhookLog(logEntry);
 
-      // 4. Synchronize Order into Supabase Database if Verified
       if (verified && verificationData) {
         try {
           const orderPayload = {
@@ -385,8 +369,6 @@ const server = http.createServer(async (req, res) => {
     }
   }
 
-  // --- API ENDPOINT 5: Webhook Status & Live Event Logs ---
-  // --- API ENDPOINT 5: Webhook Status & Diagnostic Summary ---
   if (pathname === '/api/flutterwave/webhook/status' && req.method === 'GET') {
     const host = req.headers.host || 'localhost:8080';
     const protocol = req.headers['x-forwarded-proto'] || 'http';
@@ -401,7 +383,6 @@ const server = http.createServer(async (req, res) => {
     }));
   }
 
-  // --- STATIC FILE SERVER ---
   const urlPath = pathname === '/' ? 'index.html' : pathname;
   let filePath = path.join(__dirname, urlPath);
 
@@ -428,3 +409,4 @@ server.listen(PORT, () => {
   console.log(`TRENDHIGHCLOTHING Server running at http://localhost:${PORT}/`);
   console.log(`[Security] Flutterwave Secret Key is protected on server-side.`);
 });
+

@@ -1,4 +1,3 @@
-// TRENDHIGHCLOTHING - Administrative Back-Office Controller
 
 const AdminPortal = {
   activePanel: "admin-overview",
@@ -152,12 +151,10 @@ const AdminPortal = {
     });
   },
 
-
   async fetchOrders() {
     let orders = [];
     const sb = this.getSupabase();
 
-    // 1. Attempt Supabase SDK fetch
     if (sb) {
       try {
         const { data, error } = await sb.from('orders').select('*');
@@ -182,7 +179,6 @@ const AdminPortal = {
       }
     }
 
-    // 2. Direct REST API Fallback if SDK returns no orders
     if (orders.length === 0) {
       try {
         const url = "https://xbgohwvxrvvrbjbzbwkx.supabase.co/rest/v1/orders?select=*";
@@ -214,7 +210,6 @@ const AdminPortal = {
       }
     }
 
-    // 3. Merge local fallback orders from localStorage
     try {
       const localOrders = JSON.parse(localStorage.getItem("thc_orders")) || [];
       localOrders.forEach(lo => {
@@ -410,7 +405,6 @@ const AdminPortal = {
     this.elements.activityContainer.innerHTML = logHtml;
   },
 
-  // 2. INVENTORY CATALOG PANEL
   async loadInventoryData() {
     const demoIds = ["thc-001", "thc-002", "thc-003", "thc-004", "thc-005", "thc-006", "thc-007", "thc-008"];
     let products = [];
@@ -737,7 +731,6 @@ const AdminPortal = {
     }
   },
 
-  // 3. ORDERS FULFILLMENT PANEL
   async loadOrdersData() {
     const orders = await this.fetchOrders();
 
@@ -927,3 +920,4 @@ if (document.readyState === "loading") {
 } else {
   AdminPortal.init();
 }
+

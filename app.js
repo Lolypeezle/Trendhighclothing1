@@ -1,4 +1,3 @@
-// TRENDHIGHCLOTHING - Front-End Controller & Orchestrator
 
 const StoreApp = {
   products: [],
@@ -131,7 +130,6 @@ const StoreApp = {
       receiptTotal: document.getElementById("receipt-total"),
       btnSuccessShop: document.getElementById("success-shop-btn"),
       
-      // Admin Login Elements
       adminLoginForm: document.getElementById("admin-login-form"),
       adminPassword: document.getElementById("admin-password"),
       loginError: document.getElementById("login-error-msg"),
@@ -175,7 +173,6 @@ const StoreApp = {
   },
 
   async initDatabase() {
-    // 1. Load cart from local storage (keeps cart local for guest users)
     this.cart = JSON.parse(localStorage.getItem("thc_cart")) || [];
     
     // Check admin session in Supabase Auth
@@ -195,7 +192,6 @@ const StoreApp = {
       this.adminLoggedIn = sessionStorage.getItem("thc_admin_auth") === "true";
     }
 
-    // 2. Read from local cache
     const cachedCount = this.loadProductsFromCache().length;
 
     if (cachedCount > 0) {
@@ -295,7 +291,6 @@ const StoreApp = {
   },
 
   bindEvents() {
-    // View navigation mapping
     this.elements.navLogo.addEventListener("click", (e) => {
       e.preventDefault();
       window.location.hash = "#shop";
@@ -374,7 +369,6 @@ const StoreApp = {
       window.location.hash = "#shop";
     });
 
-    // Admin login submit
     this.elements.adminLoginForm.addEventListener("submit", (e) => this.handleAdminLogin(e));
 
     // Footer filter mapping
@@ -974,7 +968,6 @@ const StoreApp = {
     
     let savedToCloud = false;
 
-    // 1. Attempt Supabase SDK insert
     try {
       const sb = this.getSupabase();
       if (sb) {
@@ -999,7 +992,6 @@ const StoreApp = {
       console.warn("Supabase SDK order insert note:", err.message || err);
     }
 
-    // 2. Direct REST API insert fallback if SDK insert did not complete
     if (!savedToCloud) {
       try {
         const url = "https://xbgohwvxrvvrbjbzbwkx.supabase.co/rest/v1/orders";
@@ -1022,7 +1014,6 @@ const StoreApp = {
       }
     }
 
-    // 3. Always save to Local Storage cache so order is never lost
     try {
       const localOrders = JSON.parse(localStorage.getItem("thc_orders")) || [];
       const idx = localOrders.findIndex(o => o.id === newOrder.id);
@@ -1033,7 +1024,6 @@ const StoreApp = {
       console.warn("localStorage order save note:", e);
     }
 
-    // 4. Broadcast order creation to Admin Portal across tabs & windows
     if ("BroadcastChannel" in window) {
       try {
         const orderChannel = new BroadcastChannel("thc_orders_channel");
@@ -1069,7 +1059,6 @@ const StoreApp = {
     window.location.hash = "#success";
   },
 
-  // ADMIN LOGIN (Authenticated via Supabase Auth Database)
   async handleAdminLogin(e) {
     e.preventDefault();
     const email = document.getElementById("admin-email").value.trim();
@@ -1159,3 +1148,4 @@ if (document.readyState === "loading") {
 } else {
   StoreApp.init();
 }
+
