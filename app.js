@@ -555,8 +555,11 @@ const StoreApp = {
   },
 
   getProductImageOrSVG(p) {
-    if (p && p.image && (p.image.startsWith("http") || p.image.startsWith("assets") || p.image.startsWith("data:") || p.image.startsWith("/") || p.image.startsWith("blob:"))) {
-      return `<img src="${p.image}" class="product-image-img" alt="${p.title || 'Product'}" loading="lazy" decoding="async" style="width: 100%; height: 100%; object-fit: cover; transition: var(--transition-smooth);">`;
+    const isValidImg = p && p.image && typeof p.image === "string" && !p.image.startsWith("assets") && (p.image.startsWith("http") || p.image.startsWith("data:") || p.image.startsWith("/") || p.image.startsWith("blob:"));
+    if (isValidImg) {
+      const cat = (p && p.category) ? p.category : 'Tees';
+      const col = (p && p.fallbackColor) ? p.fallbackColor : '#3A3530';
+      return `<img src="${p.image}" class="product-image-img" alt="${p.title || 'Product'}" loading="lazy" decoding="async" style="width: 100%; height: 100%; object-fit: cover; transition: var(--transition-smooth);" onerror="this.onerror=null; this.style.display='none'; if(this.parentElement){ this.parentElement.innerHTML = StoreApp.getProductSVG('${cat}', '${col}'); }">`;
     }
     return this.getProductSVG(p ? p.category : "Tees", p ? p.fallbackColor : "#3A3530");
   },

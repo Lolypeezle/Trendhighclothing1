@@ -58,6 +58,10 @@ const AdminPortal = {
       productColor: document.getElementById("product-color"),
       productSizes: document.getElementById("product-sizes"),
       productImageFile: document.getElementById("product-image-file"),
+      productImageUrl: document.getElementById("product-image-url"),
+      productImagePreviewContainer: document.getElementById("product-image-preview-container"),
+      productImagePreview: document.getElementById("product-image-preview"),
+      productImageInfo: document.getElementById("product-image-info"),
       productSubmitBtn: document.getElementById("admin-modal-submit"),
 
       // Orders elements
@@ -101,6 +105,33 @@ const AdminPortal = {
 
     // Product form submit
     this.elements.productForm.addEventListener("submit", (e) => this.handleProductSubmit(e));
+
+    // Live lightweight image preview handlers
+    if (this.elements.productImageFile) {
+      this.elements.productImageFile.addEventListener("change", async (e) => {
+        if (e.target.files && e.target.files[0]) {
+          try {
+            const { dataUrl, sizeKb } = await this.compressImage(e.target.files[0]);
+            if (this.elements.productImagePreview) this.elements.productImagePreview.src = dataUrl;
+            if (this.elements.productImageInfo) this.elements.productImageInfo.textContent = `Lightweight WebP Ready (${sizeKb} KB)`;
+            if (this.elements.productImagePreviewContainer) this.elements.productImagePreviewContainer.style.display = "flex";
+          } catch (err) {
+            console.warn("Image preview note:", err);
+          }
+        }
+      });
+    }
+
+    if (this.elements.productImageUrl) {
+      this.elements.productImageUrl.addEventListener("input", (e) => {
+        const urlVal = e.target.value.trim();
+        if (urlVal) {
+          if (this.elements.productImagePreview) this.elements.productImagePreview.src = urlVal;
+          if (this.elements.productImageInfo) this.elements.productImageInfo.textContent = "Image URL specified";
+          if (this.elements.productImagePreviewContainer) this.elements.productImagePreviewContainer.style.display = "flex";
+        }
+      });
+    }
   },
 
   switchPanel(panelId) {
@@ -142,11 +173,79 @@ const AdminPortal = {
     return "₦" + Number(val).toLocaleString("en-NG", { minimumFractionDigits: 0 });
   },
 
+  escapeHTML(str) {
+    if (typeof str !== "string") return str || "";
+    return str
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  },
+
   readFileAsDataURL(file) {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = () => resolve(reader.result);
       reader.onerror = (error) => reject(error);
+      reader.readAsDataURL(file);
+    });
+  },
+
+  /**
+   * Compresses and resizes image files to lightweight WebP/JPEG formats
+   * Reduces image file size by 90-98% (e.g. 5MB camera photo -> 30-60KB)
+   */
+  compressImage(file, maxDimension = 800, quality = 0.8) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const img = new Image();
+        img.onload = () => {
+          let width = img.width;
+          let height = img.height;
+          
+          if (width > maxDimension || height > maxDimension) {
+            if (width > height) {
+              height = Math.round((height * maxDimension) / width);
+              width = maxDimension;
+            } else {
+              width = Math.round((width * maxDimension) / height);
+              height = maxDimension;
+            }
+          }
+
+          const canvas = document.createElement("canvas");
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext("2d");
+          
+          ctx.fillStyle = "#FFFFFF";
+          ctx.fillRect(0, 0, width, height);
+          ctx.drawImage(img, 0, 0, width, height);
+
+          let dataUrl = canvas.toDataURL("image/webp", quality);
+          if (!dataUrl || !dataUrl.startsWith("data:image/webp")) {
+            dataUrl = canvas.toDataURL("image/jpeg", quality);
+          }
+
+          if (canvas.toBlob) {
+            canvas.toBlob((blob) => {
+              const mime = (blob && blob.type) ? blob.type : "image/webp";
+              const ext = mime.includes("png") ? "png" : mime.includes("webp") ? "webp" : "jpg";
+              const compressedFile = new File([blob || file], (file.name || "image").replace(/\.[^/.]+$/, "") + "." + ext, {
+                type: mime
+              });
+              resolve({ file: compressedFile, dataUrl, sizeKb: Math.round((blob ? blob.size : file.size) / 1024) });
+            }, "image/webp", quality);
+          } else {
+            resolve({ file, dataUrl, sizeKb: Math.round(file.size / 1024) });
+          }
+        };
+        img.onerror = (err) => reject(err);
+        img.src = event.target.result;
+      };
+      reader.onerror = (err) => reject(err);
       reader.readAsDataURL(file);
     });
   },
@@ -471,8 +570,9 @@ const AdminPortal = {
         const stockClass = isOutOfStock ? "out-of-stock" : "";
         const stockText = isOutOfStock ? "Sold Out" : `${p.stock} units`;
 
-        const imgHtml = (p.image && (p.image.startsWith("http") || p.image.startsWith("assets") || p.image.startsWith("data:") || p.image.startsWith("/") || p.image.startsWith("blob:")))
-          ? `<img src="${p.image}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 2px;" alt="${p.title}">`
+        const isValidImg = p.image && typeof p.image === "string" && !p.image.startsWith("assets") && (p.image.startsWith("http") || p.image.startsWith("data:") || p.image.startsWith("/") || p.image.startsWith("blob:"));
+        const imgHtml = isValidImg
+          ? `<img src="${p.image}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 2px;" alt="${p.title}" onerror="this.onerror=null; this.style.display='none'; if(this.parentElement){ this.parentElement.innerHTML = AdminPortal.getProductSVG('${p.category}', '${p.fallbackColor}'); }">`
           : this.getProductSVG(p.category, p.fallbackColor);
 
         tableHtml += `
@@ -535,6 +635,8 @@ const AdminPortal = {
   openAddModal() {
     this.elements.productForm.reset();
     this.elements.editProductId.value = "";
+    if (this.elements.productImageUrl) this.elements.productImageUrl.value = "";
+    if (this.elements.productImagePreviewContainer) this.elements.productImagePreviewContainer.style.display = "none";
     this.elements.modalTitle.textContent = "Add New Product";
     this.elements.productModal.style.display = "flex";
     setTimeout(() => this.elements.productModal.classList.add("active"), 10);
@@ -543,24 +645,38 @@ const AdminPortal = {
   async openEditModal(productId) {
     try {
       const sb = this.getSupabase();
-      if (!sb) return;
+      let p = null;
+      if (sb) {
+        const { data, error } = await sb.from('products').select('*').eq('id', productId).single();
+        if (!error && data) p = data;
+      }
+      if (!p && window.StoreApp && Array.isArray(window.StoreApp.products)) {
+        p = window.StoreApp.products.find(item => item.id === productId);
+      }
 
-      const { data: p, error } = await sb
-        .from('products')
-        .select('*')
-        .eq('id', productId)
-        .single();
-
-      if (error || !p) return;
+      if (!p) return;
 
       this.elements.editProductId.value = p.id;
-      this.elements.productTitle.value = p.title;
-      this.elements.productCategory.value = p.category;
-      this.elements.productPrice.value = p.price;
-      this.elements.productDescription.value = p.description;
-      this.elements.productStock.value = p.stock;
-      this.elements.productColor.value = p.fallback_color;
-      this.elements.productSizes.value = (p.sizes || []).join(", ");
+      this.elements.productTitle.value = p.title || "";
+      this.elements.productCategory.value = p.category || "Tees";
+      this.elements.productPrice.value = p.price || "";
+      this.elements.productDescription.value = p.description || "";
+      this.elements.productStock.value = (p.stock !== undefined) ? p.stock : 10;
+      this.elements.productColor.value = p.fallback_color || p.fallbackColor || "#3A3530";
+      this.elements.productSizes.value = Array.isArray(p.sizes) ? p.sizes.join(", ") : (p.sizes || "L, XL, XXL");
+
+      const imgVal = p.image || "";
+      if (imgVal && !imgVal.startsWith("assets")) {
+        if (this.elements.productImageUrl && imgVal.startsWith("http")) {
+          this.elements.productImageUrl.value = imgVal;
+        }
+        if (this.elements.productImagePreview) this.elements.productImagePreview.src = imgVal;
+        if (this.elements.productImageInfo) this.elements.productImageInfo.textContent = "Current image loaded";
+        if (this.elements.productImagePreviewContainer) this.elements.productImagePreviewContainer.style.display = "flex";
+      } else {
+        if (this.elements.productImageUrl) this.elements.productImageUrl.value = "";
+        if (this.elements.productImagePreviewContainer) this.elements.productImagePreviewContainer.style.display = "none";
+      }
 
       this.elements.modalTitle.textContent = "Edit Product " + p.id;
       this.elements.productModal.style.display = "flex";
@@ -591,33 +707,38 @@ const AdminPortal = {
       const sb = this.getSupabase();
       let imageUrl = "";
       if (id && sb) {
-        // Fetch existing product to preserve old image if no new file is uploaded
         const { data: existingProd } = await sb.from('products').select('image').eq('id', id).single();
-        if (existingProd) {
+        if (existingProd && existingProd.image && !existingProd.image.startsWith("assets")) {
           imageUrl = existingProd.image;
         }
-      } else {
-        imageUrl = `assets/${category.toLowerCase()}.png`; // default fallback
       }
 
-      // Check if a new file is selected for upload
+      // Check URL input
+      const urlInput = this.elements.productImageUrl;
+      if (urlInput && urlInput.value.trim().length > 0) {
+        imageUrl = urlInput.value.trim();
+      }
+
+      // Check File input (compress file if selected)
       const fileInput = this.elements.productImageFile;
       if (fileInput && fileInput.files && fileInput.files.length > 0) {
-        const file = fileInput.files[0];
+        const rawFile = fileInput.files[0];
         const submitBtn = this.elements.productSubmitBtn;
         const origText = submitBtn.textContent;
-        submitBtn.textContent = "Uploading Image...";
+        submitBtn.textContent = "Compressing & Uploading...";
         submitBtn.disabled = true;
 
         try {
-          const fileExt = file.name.split('.').pop();
+          // Automatic Client-Side WebP Compression & Resizing
+          const { file: compressedFile, dataUrl: compressedDataUrl } = await this.compressImage(rawFile, 800, 0.8);
+          const fileExt = compressedFile.name.split('.').pop() || "webp";
           const fileName = `${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
           const filePath = `products/${fileName}`;
 
           if (sb && sb.storage) {
             const { data, error: uploadError } = await sb.storage
               .from('product-images')
-              .upload(filePath, file);
+              .upload(filePath, compressedFile);
 
             if (!uploadError && data) {
               const { data: { publicUrl } } = sb.storage
@@ -625,15 +746,15 @@ const AdminPortal = {
                 .getPublicUrl(filePath);
               imageUrl = publicUrl;
             } else {
-              console.warn("Supabase Storage upload failed or bucket missing. Converting image to DataURL fallback...");
-              imageUrl = await this.readFileAsDataURL(file);
+              console.warn("Supabase Storage upload note. Using lightweight compressed DataURL fallback...");
+              imageUrl = compressedDataUrl;
             }
           } else {
-            imageUrl = await this.readFileAsDataURL(file);
+            imageUrl = compressedDataUrl;
           }
         } catch (storageErr) {
           console.warn("Storage exception. Converting image to DataURL fallback:", storageErr);
-          imageUrl = await this.readFileAsDataURL(file);
+          imageUrl = await this.readFileAsDataURL(rawFile);
         } finally {
           submitBtn.textContent = origText;
           submitBtn.disabled = false;
@@ -788,10 +909,11 @@ const AdminPortal = {
           displayStatus = "Delivered";
         }
 
+        const esc = (s) => this.escapeHTML(s);
         tableHtml += `
           <tr>
-            <td><strong>${o.id}</strong><br><span style="font-size:11px; color:var(--text-secondary);">${o.date}</span></td>
-            <td><strong>${o.customerName}</strong><br><span style="font-size:11px; color:var(--text-secondary);">${o.email}</span></td>
+            <td><strong>${esc(o.id)}</strong><br><span style="font-size:11px; color:var(--text-secondary);">${esc(o.date)}</span></td>
+            <td><strong>${esc(o.customerName)}</strong><br><span style="font-size:11px; color:var(--text-secondary);">${esc(o.email)}</span></td>
             <td>
               <div style="max-width:300px; min-width:220px;">
                 ${itemsHtml}
@@ -799,8 +921,8 @@ const AdminPortal = {
             </td>
             <td>
               <div style="max-width:240px; font-size:12px; line-height:1.4;">
-                ${o.address}${o.city ? ', ' + o.city : ''}${o.state ? ', ' + o.state + ' State' : ''}<br>
-                <span style="font-weight:600; color:var(--text-secondary);">Tel: ${o.phone}</span>
+                ${esc(o.address)}${o.city ? ', ' + esc(o.city) : ''}${o.state ? ', ' + esc(o.state) + ' State' : ''}<br>
+                <span style="font-weight:600; color:var(--text-secondary);">Tel: ${esc(o.phone)}</span>
               </div>
             </td>
             <td style="font-size:11px; font-weight:500;">${o.method}</td>

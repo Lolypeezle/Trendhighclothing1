@@ -119,15 +119,8 @@
               if (verification.success) {
                 if (onSuccess) onSuccess(verification.data);
               } else {
-                // Fallback payment receipt for valid inline completion
-                if (onSuccess) {
-                  onSuccess({
-                    reference: data.tx_ref || tx_ref,
-                    method: data.payment_type || "Flutterwave Card / Transfer",
-                    status: "Paid",
-                    date: new Date().toLocaleString("en-NG")
-                  });
-                }
+                alert("Payment verification could not be confirmed. If funds were deducted, please contact support with reference: " + tx_ref);
+                if (onCancel) onCancel();
               }
             },
             onclose: () => {
@@ -160,17 +153,14 @@
           });
 
           if (response.ok) {
-            const contentType = response.headers.get("content-type");
-            if (contentType && contentType.includes("application/json")) {
-              const result = await response.json();
-              if (result.status === "success" && result.data && result.data.link) {
-                window.location.href = result.data.link;
-                return;
-              }
+            const data = await response.json();
+            if (data && data.data && data.data.link) {
+              window.location.href = data.data.link;
+              return;
             }
           }
-        } catch (serverErr) {
-          console.warn("[Flutterwave Server Endpoint Notice]:", serverErr);
+        } catch (err) {
+          console.warn("[Flutterwave Init Error]:", err);
         }
       }
 
@@ -185,7 +175,7 @@
     },
 
     /**
-     * Verifies payment status
+     * Verifies payment status securely via server API
      */
     async verifyTransaction(transaction_id, tx_ref) {
       if (isFileProtocol) {
@@ -210,20 +200,19 @@
               date: resData.data.created_at || new Date().toLocaleString("en-NG")
             }
           };
+        } else {
+          return {
+            success: false,
+            message: (resData && resData.message) ? resData.message : "Payment verification declined by processor."
+          };
         }
       } catch (e) {
-        console.warn("[Flutterwave Verification Notice]:", e.message);
+        console.warn("[Flutterwave Verification Error]:", e.message);
+        return {
+          success: false,
+          message: "Verification network error: " + e.message
+        };
       }
-
-      return {
-        success: true,
-        data: {
-          reference: tx_ref || "THC-FLW-" + Date.now(),
-          method: "Flutterwave Verification",
-          status: "Paid",
-          date: new Date().toLocaleString("en-NG")
-        }
-      };
     },
 
     /**

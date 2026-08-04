@@ -591,8 +591,13 @@
           </div>
 
           <div class="form-group" style="margin-bottom: 15px;">
-            <label for="product-image-file">Product Photo (Upload Image)</label>
-            <input type="file" id="product-image-file" accept="image/*" style="padding: 8px; border: 1px dashed var(--border-color); background-color: var(--bg-secondary); color: var(--text-primary); border-radius: 4px; width: 100%;">
+            <label for="product-image-file">Product Photo (Auto-compressed Lightweight Upload or URL)</label>
+            <input type="file" id="product-image-file" accept="image/*" style="padding: 8px; border: 1px dashed var(--border-color); background-color: var(--bg-secondary); color: var(--text-primary); border-radius: 4px; width: 100%; margin-bottom: 8px;">
+            <input type="text" id="product-image-url" placeholder="Or paste direct Image URL (e.g. https://...)" style="padding: 10px; border: 1px solid var(--border-color); background-color: var(--bg-secondary); color: var(--text-primary); border-radius: 4px; width: 100%;">
+            <div id="product-image-preview-container" style="margin-top: 8px; display: none; align-items: center; gap: 10px; padding: 6px; background: var(--bg-secondary); border-radius: 4px; border: 1px solid var(--border-color);">
+              <img id="product-image-preview" src="" style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px; border: 1px solid var(--border-color);" alt="Preview">
+              <span id="product-image-info" style="font-size: 11px; color: var(--text-secondary);">Image preview ready</span>
+            </div>
           </div>
 
           <div class="form-group-row">
